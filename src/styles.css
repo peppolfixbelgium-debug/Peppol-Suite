@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Fraunces", "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-soft: 0 1px 2px color-mix(in oklab, var(--fg) 6%, transparent),
+    0 12px 32px color-mix(in oklab, var(--fg) 6%, transparent);
+}
+
+:root {
+  --bg: #f4f1eb;
+  --surface: #fbf9f4;
+  --elevated: #ffffff;
+  --fg: #12140f;
+  --fg-muted: #5c5a54;
+  --fg-subtle: #8a877e;
+  --border: color-mix(in oklab, #12140f 12%, transparent);
+  --accent: #0f5c4c;
+  --accent-fg: #f4f1eb;
+  --accent-soft: #e4efe9;
+  --danger: #9b2c2c;
+  --warn: #8a5a12;
+  --ok: #0f5c4c;
+}
+
+.dark {
+  --bg: #12140f;
+  --surface: #1b1d18;
+  --elevated: #24261f;
+  --fg: #f4f1eb;
+  --fg-muted: #b4b1a6;
+  --fg-subtle: #8a877e;
+  --border: color-mix(in oklab, #f4f1eb 14%, transparent);
+  --accent: #3d9b86;
+  --accent-fg: #08140f;
+  --accent-soft: #1a322b;
+  --danger: #e8a0a0;
+  --warn: #e0c07a;
+  --ok: #7dcaa9;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
