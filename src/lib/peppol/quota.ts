@@ -1,39 +1,25 @@
-import { monthKey } from "@/lib/utils";
-
-const KEY = "peppol.free.v1";
 export const FREE_LIMIT = 5;
 
-type QuotaState = { month: string; used: number };
+export type QuotaState = { used: number; limit: number; remaining: number };
 
-function read(): QuotaState {
-  if (typeof window === "undefined") return { month: monthKey(), used: 0 };
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    if (!raw) return { month: monthKey(), used: 0 };
-    const parsed = JSON.parse(raw) as QuotaState;
-    if (parsed.month !== monthKey()) return { month: monthKey(), used: 0 };
-    return { month: parsed.month, used: Number(parsed.used) || 0 };
-  } catch {
-    return { month: monthKey(), used: 0 };
-  }
+export function getQuota(): QuotaState {
+  return { used: 0, limit: FREE_LIMIT, remaining: FREE_LIMIT };
 }
 
-function write(state: QuotaState) {
-  window.localStorage.setItem(KEY, JSON.stringify(state));
+export async function fetchQuota(): Promise<QuotaState> {
+  const response = await fetch("/api/usage", { credentials: "include" });
+  if (!response.ok) throw new Error("Unable to load usage quota.");
+  const data = await response.json() as { conversions: { used: number; limit: number } };
+  const used = Number(data.conversions.used) || 0;
+  const limit = Number(data.conversions.limit) || 0;
+  return { used, limit, remaining: Math.max(0, limit - used) };
 }
 
-export function getQuota() {
-  const state = read();
-  return { used: state.used, limit: FREE_LIMIT, remaining: Math.max(0, FREE_LIMIT - state.used) };
-}
-
-export function canConsume() {
-  return getQuota().remaining > 0;
-}
-
-export function consumeQuota() {
-  const state = read();
-  if (state.used >= FREE_LIMIT) return getQuota();
-  write({ month: state.month, used: state.used + 1 });
-  return getQuota();
+export async function consumeQuota(): Promise<QuotaState> {
+  const response = await fetch("/api/usage", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "conversion" }) });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Monthly conversion limit reached.");
+  const used = Number(data.used) || 0;
+  const limit = Number(data.limit) || 0;
+  return { used, limit, remaining: Math.max(0, limit - used) };
 }
