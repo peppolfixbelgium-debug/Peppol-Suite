@@ -1,5 +1,3 @@
-import handler from "../../[...path].js";
+import { GET } from "../../[...path].js";
 
-export function GET(request: Request): Response | Promise<Response> {
-  return handler(request);
-}
+export { GET };
