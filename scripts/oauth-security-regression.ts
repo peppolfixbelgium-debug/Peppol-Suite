@@ -21,7 +21,7 @@ assert.match(auth, /states\[0\]\.user_id/);
 assert.match(auth, /path === "oauth\/google\/link\/start" && request\.method === "POST"/);
 assert.match(auth, /path === "oauth\/microsoft\/link\/start" && request\.method === "POST"/);
 assert.match(auth, /Add a password or another OAuth provider before unlinking this provider/);
-assert.doesNotMatch(auth, /byEmail\[0\][\s\S]{0,500}INSERT INTO accounts/);
+assert.match(auth, /if \(byEmail\[0\]\) return redirect\("\/login\?error=account_exists"/);
 assert.match(migration, /user_id UUID REFERENCES users\(id\) ON DELETE CASCADE/);
 
 console.log("OAuth security regression tests passed");
