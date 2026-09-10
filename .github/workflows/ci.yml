@@ -1,3 +1,4 @@
+# Full validation uses the committed lockfile plus disposable PostgreSQL.
 name: CI
 
 on:
