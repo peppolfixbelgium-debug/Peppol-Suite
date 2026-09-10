@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const root = join(process.cwd(), "api");
@@ -21,10 +21,15 @@ for (const file of walk(root)) {
   }
 }
 
+for (const file of ["api/auth/oauth/google/start.ts", "api/auth/oauth/google/callback.ts"]) {
+  const source = readFileSync(join(process.cwd(), file), "utf8");
+  if (!/export function GET\s*\(request: Request\)/.test(source)) failures.push(`${file} must expose a Vercel fetch-style GET handler`);
+}
+
 if (failures.length) {
-  console.error("Vercel API ESM import regression detected:");
+  console.error("Vercel API runtime regression detected:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log("Vercel API ESM import regression: PASS");
+console.log("Vercel API runtime regression: PASS");
