@@ -30,8 +30,6 @@ jobs:
       APP_URL: http://localhost:4173
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: auth-database-foundation
       - uses: actions/setup-node@v4
         with:
           node-version: 24.x
@@ -43,3 +41,4 @@ jobs:
       - run: npm run build
       - run: npm run test:regression
       - run: npm run test:oauth-security
+      - run: npm run test:vercel-api-esm

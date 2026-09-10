@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { getDb, requireEnv } from "./db";
+import { getDb, requireEnv } from "./db.js";
 
 const SESSION_COOKIE = "peppol_session";
 const OAUTH_STATE_COOKIE = "peppol_oauth_state";

@@ -1,9 +1,9 @@
 import {
   appUrl, clearOAuthStateCookie, createSession, getSessionUser, getCookie, hashPassword, issueAuthToken, oauthStateCookie,
   publicUser, rateLimit, requireSameOrigin, requestIp, revokeSession, securityEvent, sendEmail, sessionCookie, sha256, verifyPassword,
-} from "../_lib/auth";
-import { decideOAuthLink } from "../_lib/oauth-policy";
-import { getDb, requireEnv } from "../_lib/db";
+} from "../_lib/auth.js";
+import { decideOAuthLink } from "../_lib/oauth-policy.js";
+import { getDb, requireEnv } from "../_lib/db.js";
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...headers } });
@@ -151,7 +151,7 @@ async function oauthStart(request: Request, provider: "google" | "microsoft", li
     if (!current || current.id !== linkUserId) throw new Response(JSON.stringify({ error: "Authentication required." }), { status: 401 });
   }
   const clientId = requireEnv(provider === "google" ? "GOOGLE_CLIENT_ID" : "MICROSOFT_CLIENT_ID");
-  const state = (await import("../_lib/auth")).randomToken(32);
+  const state = (await import("../_lib/auth.js")).randomToken(32);
   const hash = await sha256(state);
   const callback = appUrl(`/api/auth/oauth/${provider}/callback`);
   const sql = getDb();
@@ -230,6 +230,7 @@ async function unlinkOAuth(request: Request, provider: "google" | "microsoft") {
   await securityEvent(request, "oauth_unlinked", user.id, { provider });
   return json({ ok: true });
 }
+
 export default async function handler(request: Request) {
   try {
     const path = new URL(request.url).pathname.replace(/^\/api\/auth\/?/, "").replace(/\/$/, "");
