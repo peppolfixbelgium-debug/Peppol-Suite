@@ -1,7 +1,7 @@
 import { Readable } from "node:stream";
 import { nodeRequestToWebRequest } from "../api/usage.js";
 
-const nodeRequest = Object.assign(Readable.from([JSON.stringify({ kind: "conversion" })]), {
+const nodeRequest = Object.assign(Readable.from([Buffer.from(JSON.stringify({ kind: "conversion" }))]), {
   method: "POST",
   url: "/api/usage?test=1",
   headers: {
