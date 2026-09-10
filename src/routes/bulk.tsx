@@ -16,6 +16,36 @@ export const Route = createFileRoute("/bulk")({ component: BulkPage });
 
 type Row = { name: string; status: string; xml?: string; invoice?: string };
 
+async function expandInputFiles(files: File[]): Promise<File[]> {
+  const result: File[] = [];
+  for (const file of files) {
+    if (!/\.zip$/i.test(file.name)) {
+      result.push(file);
+      continue;
+    }
+    try {
+      const archive = await JSZip.loadAsync(file);
+      const entries = Object.keys(archive.files).map((name) => archive.files[name]).filter((entry) => !entry.dir && /\.pdf$/i.test(entry.name));
+      if (!entries.length) {
+        result.push(file);
+        continue;
+      }
+      for (const entry of entries) {
+        const blob = await entry.async("blob");
+        const name = entry.name.split("/").pop() || "invoice.pdf";
+        result.push(new File([blob], name, { type: "application/pdf" }));
+      }
+    } catch {
+      result.push(file);
+    }
+  }
+  return result;
+}
+
+function csvCell(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
+}
+
 function BulkPage() {
   const lang = usePrefs((s) => s.lang);
   const [rows, setRows] = useState<Row[]>([]);
@@ -26,10 +56,15 @@ function BulkPage() {
     setQuota(getQuota());
   }, []);
 
-  async function run(files: File[]) {
+  async function run(inputFiles: File[]) {
     setBusy(true);
+    const files = await expandInputFiles(inputFiles);
     const next: Row[] = [];
     for (const file of files.slice(0, FREE_LIMIT)) {
+      if (/\.zip$/i.test(file.name)) {
+        next.push({ name: file.name, status: "ZIP could not be opened or contains no PDF files." });
+        continue;
+      }
       if (!canConsume()) {
         next.push({ name: file.name, status: t(lang, "quota_full") });
         continue;
@@ -60,7 +95,7 @@ function BulkPage() {
     const summary = ["file,status,xml"];
     for (const row of rows) {
       if (row.xml && row.invoice) zip.file(row.invoice, row.xml);
-      summary.push(`${row.name},${row.status},${row.invoice ?? ""}`);
+      summary.push([row.name, row.status, row.invoice ?? ""].map(csvCell).join(","));
     }
     zip.file("summary.csv", summary.join("\n"));
     const blob = await zip.generateAsync({ type: "blob" });
@@ -75,7 +110,7 @@ function BulkPage() {
       <label className="mt-6 grid min-h-40 cursor-pointer place-items-center rounded-2xl border border-dashed border-border bg-elevated p-6">
         <input
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,.zip,application/zip"
           multiple
           className="hidden"
           disabled={busy}

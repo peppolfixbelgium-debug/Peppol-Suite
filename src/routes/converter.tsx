@@ -88,6 +88,11 @@ function ConverterPage() {
   }
 
   async function onDownload() {
+    if (!result.ok) {
+      setTab("fields");
+      setError("Fix all blocking compliance issues before downloading XML. No invalid invoice is exported.");
+      return;
+    }
     if (!canConsume()) {
       setShowUpgrade(true);
       return;
@@ -211,7 +216,7 @@ function ConverterPage() {
                 <Copy className="size-4" />
                 {t(lang, "copy_xml")}
               </Button>
-              <Button type="button" size="sm" onClick={() => void onDownload()}>
+              <Button type="button" size="sm" disabled={!result.ok} onClick={() => void onDownload()}>
                 <Download className="size-4" />
                 {t(lang, "download_xml")}
               </Button>

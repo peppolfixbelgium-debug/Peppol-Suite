@@ -63,9 +63,22 @@ export function InvoiceForm({
         <h3 className="text-sm font-medium">{t(lang, "f_invoice")}</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label={t(lang, "f_invoice")} field={data.invoiceNumber} lang={lang} onChange={(f) => set("invoiceNumber", f)} />
+          <label className="grid gap-1">
+            <span className="text-xs font-medium text-muted">Document type</span>
+            <select
+              className="h-11 rounded-md border border-border bg-surface px-3 text-sm"
+              value={data.invoiceTypeCode.value}
+              onChange={(e) => set("invoiceTypeCode", { value: e.target.value, confidence: "high" })}
+            >
+              <option value="380">380 — Invoice</option>
+              <option value="381">381 — Credit note</option>
+            </select>
+          </label>
           <Field label={t(lang, "f_currency")} field={data.currency} lang={lang} onChange={(f) => set("currency", f)} />
           <Field label={t(lang, "f_issue")} field={data.issueDate} lang={lang} type="date" onChange={(f) => set("issueDate", f)} />
           <Field label={t(lang, "f_due")} field={data.dueDate} lang={lang} type="date" onChange={(f) => set("dueDate", f)} />
+          <Field label={t(lang, "f_buyer_ref")} field={data.buyerReference} lang={lang} onChange={(f) => set("buyerReference", f)} />
+          <Field label={t(lang, "f_order_ref")} field={data.orderReference} lang={lang} onChange={(f) => set("orderReference", f)} />
         </div>
       </section>
 
@@ -100,6 +113,21 @@ export function InvoiceForm({
           <Field label={t(lang, "f_net")} field={data.netAmount} lang={lang} onChange={(f) => set("netAmount", f)} />
           <Field label={t(lang, "f_vatamt")} field={data.vatAmount} lang={lang} onChange={(f) => set("vatAmount", f)} />
           <Field label={t(lang, "f_payable")} field={data.payableAmount} lang={lang} onChange={(f) => set("payableAmount", f)} />
+          <Field label="Document allowance" field={data.documentAllowanceAmount} lang={lang} onChange={(f) => set("documentAllowanceAmount", f)} />
+          <Field label="Allowance VAT %" field={data.documentAllowanceVatRate} lang={lang} onChange={(f) => set("documentAllowanceVatRate", f)} />
+          <Field label="Document charge" field={data.documentChargeAmount} lang={lang} onChange={(f) => set("documentChargeAmount", f)} />
+          <Field label="Charge VAT %" field={data.documentChargeVatRate} lang={lang} onChange={(f) => set("documentChargeVatRate", f)} />
+          <Field label="Prepaid" field={data.prepaidAmount} lang={lang} onChange={(f) => set("prepaidAmount", f)} />
+          <Field label="Rounding" field={data.roundingAmount} lang={lang} onChange={(f) => set("roundingAmount", f)} />
+        </div>
+      </section>
+
+      <section className="grid gap-3">
+        <h3 className="text-sm font-medium">Payment</h3>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field label={t(lang, "f_payment_means")} field={data.paymentMeansCode} lang={lang} onChange={(f) => set("paymentMeansCode", f)} />
+          <Field label={t(lang, "f_payment_account")} field={data.paymentAccount} lang={lang} onChange={(f) => set("paymentAccount", f)} />
+          <Field label={t(lang, "f_payment_ref")} field={data.paymentReference} lang={lang} onChange={(f) => set("paymentReference", f)} />
         </div>
       </section>
 
@@ -115,7 +143,7 @@ export function InvoiceForm({
                 ...data,
                 lines: [
                   ...data.lines,
-                  { description: "", quantity: "1", unitPrice: "0.00", vatRate: "21", lineTotal: "0.00" },
+                  { description: "", quantity: "1", unitCode: "C62", unitPrice: "0.00", baseQuantity: "1", vatRate: "21", lineTotal: "0.00", allowanceAmount: "0.00", chargeAmount: "0.00" },
                 ],
               })
             }
@@ -128,17 +156,19 @@ export function InvoiceForm({
           {data.lines.map((line, i) => (
             <div
               key={i}
-              className={cn("grid gap-2 rounded-lg border border-border bg-elevated p-3 md:grid-cols-[1fr_70px_90px_70px_90px_40px]")}
+              className={cn("grid gap-2 rounded-lg border border-border bg-elevated p-3 md:grid-cols-[1fr_65px_70px_90px_70px_90px_90px_40px]")}
             >
               <Input
                 value={line.description}
                 placeholder={t(lang, "f_desc")}
                 onChange={(e) => setLine(i, { description: e.target.value })}
               />
-              <Input value={line.quantity} onChange={(e) => setLine(i, { quantity: e.target.value })} />
-              <Input value={line.unitPrice} onChange={(e) => setLine(i, { unitPrice: e.target.value })} />
-              <Input value={line.vatRate} onChange={(e) => setLine(i, { vatRate: e.target.value })} />
-              <Input value={line.lineTotal} onChange={(e) => setLine(i, { lineTotal: e.target.value })} />
+              <Input value={line.quantity} aria-label={t(lang, "f_qty")} onChange={(e) => setLine(i, { quantity: e.target.value })} />
+              <Input value={line.unitCode} aria-label={t(lang, "f_unit_code")} onChange={(e) => setLine(i, { unitCode: e.target.value.toUpperCase() })} />
+              <Input value={line.unitPrice} aria-label={t(lang, "f_unit")} onChange={(e) => setLine(i, { unitPrice: e.target.value })} />
+              <Input value={line.baseQuantity} aria-label={t(lang, "f_base_qty")} onChange={(e) => setLine(i, { baseQuantity: e.target.value })} />
+              <Input value={line.vatRate} aria-label={t(lang, "f_rate")} onChange={(e) => setLine(i, { vatRate: e.target.value })} />
+              <Input value={line.lineTotal} aria-label={t(lang, "f_line")} onChange={(e) => setLine(i, { lineTotal: e.target.value })} />
               <button
                 type="button"
                 className="grid size-11 place-items-center text-muted hover:text-danger"
