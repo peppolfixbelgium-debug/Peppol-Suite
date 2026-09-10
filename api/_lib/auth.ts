@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { getDb, requireEnv } from "./db";
 
 const SESSION_COOKIE = "peppol_session";
+const OAUTH_STATE_COOKIE = "peppol_oauth_state";
 const SESSION_DAYS = 30;
 const TOKEN_TTL_MINUTES = 30;
 const PASSWORD_ITERATIONS = 600_000;
@@ -79,6 +80,15 @@ export function getCookie(request: Request, name: string): string | null {
 export function sessionCookie(token: string, maxAge = SESSION_DAYS * 86400): string {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+}
+
+export function oauthStateCookie(state: string, maxAge = 600): string {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(state)}; Path=/api/auth/oauth; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+}
+
+export function clearOAuthStateCookie(): string {
+  return oauthStateCookie("", 0);
 }
 
 export async function createSession(userId: string): Promise<string> {
