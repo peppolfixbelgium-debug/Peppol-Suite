@@ -42,3 +42,4 @@ jobs:
       - run: npm run test:regression
       - run: npm run test:oauth-security
       - run: npm run test:vercel-api-esm
+      - run: npm run test:vercel-usage-adapter
