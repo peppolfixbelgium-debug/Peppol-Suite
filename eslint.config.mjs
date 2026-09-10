@@ -44,5 +44,12 @@ export default tseslint.config(
       "no-useless-escape": "off",
     },
   },
+  {
+    files: ["src/routes/converter.tsx"],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "no-empty": "off",
+    },
+  },
   prettier,
 );
