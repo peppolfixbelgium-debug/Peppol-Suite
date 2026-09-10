@@ -1,1 +1,3 @@
-export { default } from "../../[...path].js";
+import { GET } from "../../[...path].js";
+
+export { GET };
