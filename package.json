@@ -12,6 +12,7 @@
     "test:regression": "vite build --ssr scripts/regression.ts --outDir .regression-dist && node .regression-dist/regression.js"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@radix-ui/react-slot": "^1.3.3",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-router": "^1.170.0",
