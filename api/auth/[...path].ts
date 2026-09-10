@@ -2,6 +2,7 @@ import {
   appUrl, clearOAuthStateCookie, createSession, getSessionUser, getCookie, hashPassword, issueAuthToken, oauthStateCookie,
   publicUser, rateLimit, requireSameOrigin, requestIp, revokeSession, securityEvent, sendEmail, sessionCookie, sha256, verifyPassword,
 } from "../_lib/auth";
+import { decideOAuthLink } from "../_lib/oauth-policy";
 import { getDb, requireEnv } from "../_lib/db";
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -28,7 +29,7 @@ function decodeJwtPart(part: string): Record<string, unknown> {
   const padded = part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "=");
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), c => c.charCodeAt(0))));
 }
-async function verifyIdToken(provider: "google" | "microsoft", token: string, clientId: string, nonce: string): Promise<JwtClaims> {
+export async function verifyIdToken(provider: "google" | "microsoft", token: string, clientId: string, nonce: string): Promise<JwtClaims> {
   const parts = token.split(".");
   if (parts.length !== 3) throw new Error("Invalid ID token.");
   const header = decodeJwtPart(parts[0]) as { alg?: string; kid?: string };
@@ -56,7 +57,7 @@ async function verifyIdToken(provider: "google" | "microsoft", token: string, cl
   if (!await crypto.subtle.verify("RSASSA-PKCS1-v1_5", cryptoKey, signature, data)) throw new Error("Invalid ID token signature.");
   return claims;
 }
-function providerAccountId(provider: "google" | "microsoft", claims: JwtClaims): string {
+export function providerAccountId(provider: "google" | "microsoft", claims: JwtClaims): string {
   return provider === "google" ? claims.sub! : `${claims.tid}:${claims.oid}`;
 }
 
@@ -187,25 +188,31 @@ async function oauthCallback(request: Request, provider: "google" | "microsoft")
   const email = (claims.email ?? claims.preferred_username ?? "").trim().toLowerCase();
   const existing = await sql<any[]>`SELECT u.id, u.email, u.name, u.role, u.plan_id, u.email_verified_at, u.disabled_at FROM accounts a JOIN users u ON u.id = a.user_id WHERE a.provider = ${provider} AND a.provider_account_id = ${accountId} LIMIT 1`;
   let user = existing[0];
+  let currentUserId: string | null = null;
   if (states[0].user_id) {
     const current = await getSessionUser(request);
     if (!current || current.id !== states[0].user_id) return redirect("/login?error=oauth_link", 302, [clearOAuthStateCookie()]);
-    if (user && user.id !== current.id) return redirect("/dashboard?error=oauth_already_linked", 302, [clearOAuthStateCookie()]);
+    currentUserId = current.id;
+  }
+  const byEmail = !states[0].user_id && !user && email ? await sql<any[]>`SELECT id FROM users WHERE lower(email) = ${email} LIMIT 1` : [];
+  const decision = decideOAuthLink(user?.id ?? null, byEmail[0]?.id ?? null, currentUserId);
+  if (decision === "reject_already_linked") return redirect("/dashboard?error=oauth_already_linked", 302, [clearOAuthStateCookie()]);
+  if (decision === "link") {
+    if (!currentUserId) return redirect("/login?error=oauth_link", 302, [clearOAuthStateCookie()]);
     if (!user) {
-      await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${current.id}, ${provider}, ${accountId}, ${email || null})`;
-      await securityEvent(request, "oauth_linked", current.id, { provider });
+      await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${currentUserId}, ${provider}, ${accountId}, ${email || null})`;
+      await securityEvent(request, "oauth_linked", currentUserId, { provider });
     }
     return redirect("/dashboard", 302, [clearOAuthStateCookie()]);
   }
-  if (!user) {
+  if (decision === "reject_existing_email") return redirect("/login?error=account_exists", 302, [clearOAuthStateCookie()]);
+  if (decision === "create") {
     if (!email) return redirect("/login?error=oauth_email", 302, [clearOAuthStateCookie()]);
-    const byEmail = await sql<any[]>`SELECT id FROM users WHERE lower(email) = ${email} LIMIT 1`;
-    if (byEmail[0]) return redirect("/login?error=account_exists", 302, [clearOAuthStateCookie()]);
     const created = await sql<any[]>`INSERT INTO users (email, name, email_verified_at) VALUES (${email}, ${claims.name ?? null}, ${provider === "google" ? new Date().toISOString() : null}) RETURNING id, email, name, role, plan_id, email_verified_at, disabled_at`;
     user = created[0];
     await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${user.id}, ${provider}, ${accountId}, ${email})`;
   }
-  if (user.disabled_at) return redirect("/login?error=disabled", 302, [clearOAuthStateCookie()]);
+  if (!user || user.disabled_at) return redirect("/login?error=disabled", 302, [clearOAuthStateCookie()]);
   const session = await createSession(user.id);
   await securityEvent(request, "oauth_signin", user.id, { provider });
   return redirect("/dashboard", 302, [sessionCookie(session), clearOAuthStateCookie()]);
