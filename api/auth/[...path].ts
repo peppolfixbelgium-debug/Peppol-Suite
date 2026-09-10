@@ -12,16 +12,52 @@ async function body(request: Request): Promise<Record<string, unknown>> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Response(JSON.stringify({ error: "Invalid JSON body." }), { status: 400 });
   return value as Record<string, unknown>;
 }
-
 function passwordInput(value: unknown): string {
   if (typeof value !== "string" || value.length < 12 || value.length > 1024) throw new Response(JSON.stringify({ error: "Password must be between 12 and 1024 characters." }), { status: 400 });
   return value;
 }
-
 function redirect(path: string, status = 302, cookies: string[] = []) {
   const headers = new Headers({ location: path });
   for (const cookie of cookies) headers.append("set-cookie", cookie);
   return new Response(null, { status, headers });
+}
+
+type JwtClaims = { sub?: string; oid?: string; tid?: string; iss?: string; aud?: string | string[]; exp?: number; nbf?: number; nonce?: string; email?: string; preferred_username?: string; name?: string; email_verified?: boolean };
+type Jwk = { kty: string; kid?: string; n?: string; e?: string; alg?: string; use?: string };
+function decodeJwtPart(part: string): Record<string, unknown> {
+  const padded = part.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(part.length / 4) * 4, "=");
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), c => c.charCodeAt(0))));
+}
+async function verifyIdToken(provider: "google" | "microsoft", token: string, clientId: string, nonce: string): Promise<JwtClaims> {
+  const parts = token.split(".");
+  if (parts.length !== 3) throw new Error("Invalid ID token.");
+  const header = decodeJwtPart(parts[0]) as { alg?: string; kid?: string };
+  const claims = decodeJwtPart(parts[1]) as JwtClaims;
+  const now = Math.floor(Date.now() / 1000);
+  if (header.alg !== "RS256" || !header.kid || !claims.sub || !claims.iss || !claims.aud || !claims.exp || claims.exp <= now || (claims.nbf && claims.nbf > now) || claims.nonce !== nonce) throw new Error("Invalid ID token claims.");
+  const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (!audience.includes(clientId)) throw new Error("Invalid ID token audience.");
+  if (provider === "google") {
+    if (claims.iss !== "https://accounts.google.com" && claims.iss !== "accounts.google.com") throw new Error("Invalid Google issuer.");
+    if (claims.email_verified !== true) throw new Error("Google email is not verified.");
+  } else if (!/^https:\/\/login\.microsoftonline\.com\/[^/]+\/v2\.0$/.test(claims.iss) || !claims.oid || !claims.tid) {
+    throw new Error("Invalid Microsoft issuer or identity claims.");
+  }
+  const jwksUrl = provider === "google" ? "https://www.googleapis.com/oauth2/v3/certs" : "https://login.microsoftonline.com/common/discovery/v2.0/keys";
+  const response = await fetch(jwksUrl);
+  if (!response.ok) throw new Error("Identity provider keys unavailable.");
+  const keys = await response.json() as { keys?: Jwk[] };
+  const jwk = keys.keys?.find(key => key.kid === header.kid && key.kty === "RSA" && key.n && key.e);
+  if (!jwk) throw new Error("Signing key not found.");
+  const cryptoKey = await crypto.subtle.importKey("jwk", jwk, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"]);
+  const data = new TextEncoder().encode(`${parts[0]}.${parts[1]}`);
+  const sigPart = parts[2].replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(parts[2].length / 4) * 4, "=");
+  const signature = Uint8Array.from(atob(sigPart), c => c.charCodeAt(0));
+  if (!await crypto.subtle.verify("RSASSA-PKCS1-v1_5", cryptoKey, signature, data)) throw new Error("Invalid ID token signature.");
+  return claims;
+}
+function providerAccountId(provider: "google" | "microsoft", claims: JwtClaims): string {
+  return provider === "google" ? claims.sub! : `${claims.tid}:${claims.oid}`;
 }
 
 async function signup(request: Request) {
@@ -43,7 +79,6 @@ async function signup(request: Request) {
   await securityEvent(request, "signup", userId);
   return json({ user: null, emailVerificationRequired: true }, 201);
 }
-
 async function signin(request: Request) {
   await rateLimit(request, "signin", 10, 900);
   const input = await body(request);
@@ -60,19 +95,16 @@ async function signin(request: Request) {
   await securityEvent(request, "signin", user.id);
   return json({ user: publicUser(user) }, 200, { "set-cookie": sessionCookie(session) });
 }
-
 async function signout(request: Request) {
   const user = await getSessionUser(request);
   await revokeSession(request);
   if (user) await securityEvent(request, "signout", user.id);
   return json({ ok: true }, 200, { "set-cookie": sessionCookie("", 0) });
 }
-
 async function session(request: Request) {
   const user = await getSessionUser(request);
   return json({ user: user ? publicUser(user) : null });
 }
-
 async function verify(request: Request) {
   const token = new URL(request.url).searchParams.get("token") ?? "";
   if (!token) return new Response("Missing verification token.", { status: 400 });
@@ -84,7 +116,6 @@ async function verify(request: Request) {
   await securityEvent(request, "email_verified", rows[0].user_id);
   return new Response("Email verified. You can now return to Peppol Suite and sign in.", { headers: { "content-type": "text/plain; charset=utf-8" } });
 }
-
 async function resetRequest(request: Request) {
   await rateLimit(request, "password-reset", 5, 3600);
   const input = await body(request);
@@ -99,7 +130,6 @@ async function resetRequest(request: Request) {
   }
   return json({ ok: true });
 }
-
 async function resetPassword(request: Request) {
   const input = await body(request);
   const token = typeof input.token === "string" ? input.token : "";
@@ -107,43 +137,33 @@ async function resetPassword(request: Request) {
   const hash = await sha256(token);
   const passwordHash = await hashPassword(password);
   const sql = getDb();
-  const rows = await sql<{ user_id: string }[]>`
-    WITH claimed AS (
-      UPDATE auth_tokens
-      SET used_at = now()
-      WHERE token_hash = ${hash} AND type = 'password_reset' AND used_at IS NULL AND expires_at > now()
-      RETURNING user_id
-    ), changed AS (
-      UPDATE users
-      SET password_hash = ${passwordHash}, updated_at = now()
-      FROM claimed
-      WHERE users.id = claimed.user_id
-      RETURNING users.id
-    )
-    SELECT id AS user_id FROM changed
-  `;
+  const rows = await sql<{ user_id: string }[]>`WITH claimed AS (UPDATE auth_tokens SET used_at = now() WHERE token_hash = ${hash} AND type = 'password_reset' AND used_at IS NULL AND expires_at > now() RETURNING user_id), changed AS (UPDATE users SET password_hash = ${passwordHash}, updated_at = now() FROM claimed WHERE users.id = claimed.user_id RETURNING users.id) SELECT id AS user_id FROM changed`;
   if (!rows[0]) return json({ error: "This reset link is invalid or expired." }, 400);
   await sql`UPDATE sessions SET revoked_at = now() WHERE user_id = ${rows[0].user_id} AND revoked_at IS NULL`;
   await securityEvent(request, "password_reset_completed", rows[0].user_id);
   return json({ ok: true });
 }
 
-async function oauthStart(request: Request, provider: "google" | "microsoft") {
+async function oauthStart(request: Request, provider: "google" | "microsoft", linkUserId: string | null = null) {
+  if (linkUserId) {
+    const current = await getSessionUser(request);
+    if (!current || current.id !== linkUserId) throw new Response(JSON.stringify({ error: "Authentication required." }), { status: 401 });
+  }
   const clientId = requireEnv(provider === "google" ? "GOOGLE_CLIENT_ID" : "MICROSOFT_CLIENT_ID");
   const state = (await import("../_lib/auth")).randomToken(32);
   const hash = await sha256(state);
   const callback = appUrl(`/api/auth/oauth/${provider}/callback`);
   const sql = getDb();
-  await sql`INSERT INTO oauth_states (state_hash, provider, redirect_uri, expires_at) VALUES (${hash}, ${provider}, ${callback}, now() + interval '10 minutes')`;
+  await sql`INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at) VALUES (${hash}, ${provider}, ${callback}, ${linkUserId}, now() + interval '10 minutes')`;
   const url = new URL(provider === "google" ? "https://accounts.google.com/o/oauth2/v2/auth" : "https://login.microsoftonline.com/common/oauth2/v2.0/authorize");
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", callback);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
+  url.searchParams.set("nonce", state);
   url.searchParams.set("scope", provider === "google" ? "openid email profile" : "openid email profile User.Read");
   return redirect(url.toString(), 302, [oauthStateCookie(state)]);
 }
-
 async function oauthCallback(request: Request, provider: "google" | "microsoft") {
   const params = new URL(request.url).searchParams;
   const code = params.get("code") ?? "";
@@ -152,40 +172,57 @@ async function oauthCallback(request: Request, provider: "google" | "microsoft")
   if (!code || !state || !stateCookie || stateCookie !== state) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const sql = getDb();
   const stateHash = await sha256(state);
-  const states = await sql<{ redirect_uri: string }[]>`DELETE FROM oauth_states WHERE state_hash = ${stateHash} AND provider = ${provider} AND expires_at > now() RETURNING redirect_uri`;
+  const states = await sql<{ redirect_uri: string; user_id: string | null }[]>`DELETE FROM oauth_states WHERE state_hash = ${stateHash} AND provider = ${provider} AND expires_at > now() RETURNING redirect_uri, user_id`;
   if (!states[0]) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const clientId = requireEnv(provider === "google" ? "GOOGLE_CLIENT_ID" : "MICROSOFT_CLIENT_ID");
   const clientSecret = requireEnv(provider === "google" ? "GOOGLE_CLIENT_SECRET" : "MICROSOFT_CLIENT_SECRET");
   const tokenUrl = provider === "google" ? "https://oauth2.googleapis.com/token" : "https://login.microsoftonline.com/common/oauth2/v2.0/token";
   const tokenResponse = await fetch(tokenUrl, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: states[0].redirect_uri, grant_type: "authorization_code" }) });
   if (!tokenResponse.ok) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
-  const tokens = await tokenResponse.json() as { access_token?: string };
-  if (!tokens.access_token) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
-  const profileResponse = await fetch(provider === "google" ? "https://openidconnect.googleapis.com/v1/userinfo" : "https://graph.microsoft.com/oidc/userinfo", { headers: { authorization: `Bearer ${tokens.access_token}` } });
-  if (!profileResponse.ok) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
-  const profile = await profileResponse.json() as { sub?: string; email?: string; preferred_username?: string; name?: string };
-  const providerId = profile.sub ?? "";
-  const email = (profile.email ?? profile.preferred_username ?? "").trim().toLowerCase();
-  if (!providerId || !email) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
-  const existing = await sql<any[]>`SELECT u.id, u.email, u.name, u.role, u.plan_id, u.email_verified_at, u.disabled_at FROM accounts a JOIN users u ON u.id = a.user_id WHERE a.provider = ${provider} AND a.provider_account_id = ${providerId} LIMIT 1`;
+  const tokens = await tokenResponse.json() as { access_token?: string; id_token?: string };
+  if (!tokens.access_token || !tokens.id_token) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
+  let claims: JwtClaims;
+  try { claims = await verifyIdToken(provider, tokens.id_token, clientId, state); } catch { return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]); }
+  const accountId = providerAccountId(provider, claims);
+  const email = (claims.email ?? claims.preferred_username ?? "").trim().toLowerCase();
+  const existing = await sql<any[]>`SELECT u.id, u.email, u.name, u.role, u.plan_id, u.email_verified_at, u.disabled_at FROM accounts a JOIN users u ON u.id = a.user_id WHERE a.provider = ${provider} AND a.provider_account_id = ${accountId} LIMIT 1`;
   let user = existing[0];
-  if (!user) {
-    const byEmail = await sql<any[]>`SELECT id, email, name, role, plan_id, email_verified_at, disabled_at FROM users WHERE lower(email) = ${email} LIMIT 1`;
-    if (byEmail[0]) {
-      user = byEmail[0];
-      await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${user.id}, ${provider}, ${providerId}, ${email}) ON CONFLICT DO NOTHING`;
-    } else {
-      const created = await sql<any[]>`INSERT INTO users (email, name, email_verified_at) VALUES (${email}, ${profile.name ?? null}, now()) RETURNING id, email, name, role, plan_id, email_verified_at, disabled_at`;
-      user = created[0];
-      await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${user.id}, ${provider}, ${providerId}, ${email})`;
+  if (states[0].user_id) {
+    const current = await getSessionUser(request);
+    if (!current || current.id !== states[0].user_id) return redirect("/login?error=oauth_link", 302, [clearOAuthStateCookie()]);
+    if (user && user.id !== current.id) return redirect("/dashboard?error=oauth_already_linked", 302, [clearOAuthStateCookie()]);
+    if (!user) {
+      await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${current.id}, ${provider}, ${accountId}, ${email || null})`;
+      await securityEvent(request, "oauth_linked", current.id, { provider });
     }
+    return redirect("/dashboard", 302, [clearOAuthStateCookie()]);
+  }
+  if (!user) {
+    if (!email) return redirect("/login?error=oauth_email", 302, [clearOAuthStateCookie()]);
+    const byEmail = await sql<any[]>`SELECT id FROM users WHERE lower(email) = ${email} LIMIT 1`;
+    if (byEmail[0]) return redirect("/login?error=account_exists", 302, [clearOAuthStateCookie()]);
+    const created = await sql<any[]>`INSERT INTO users (email, name, email_verified_at) VALUES (${email}, ${claims.name ?? null}, ${provider === "google" ? new Date().toISOString() : null}) RETURNING id, email, name, role, plan_id, email_verified_at, disabled_at`;
+    user = created[0];
+    await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${user.id}, ${provider}, ${accountId}, ${email})`;
   }
   if (user.disabled_at) return redirect("/login?error=disabled", 302, [clearOAuthStateCookie()]);
   const session = await createSession(user.id);
   await securityEvent(request, "oauth_signin", user.id, { provider });
   return redirect("/dashboard", 302, [sessionCookie(session), clearOAuthStateCookie()]);
 }
-
+async function unlinkOAuth(request: Request, provider: "google" | "microsoft") {
+  const user = await getSessionUser(request);
+  if (!user) return json({ error: "Authentication required." }, 401);
+  requireSameOrigin(request);
+  const sql = getDb();
+  const rows = await sql<{ password_hash: string | null; account_count: number }[]>`SELECT u.password_hash, (SELECT count(*)::int FROM accounts WHERE user_id = u.id) AS account_count FROM users u WHERE u.id = ${user.id}`;
+  if (!rows[0]) return json({ error: "Account not found." }, 404);
+  if (!rows[0].password_hash && Number(rows[0].account_count) <= 1) return json({ error: "Add a password or another OAuth provider before unlinking this provider." }, 409);
+  const deleted = await sql<any[]>`DELETE FROM accounts WHERE user_id = ${user.id} AND provider = ${provider} RETURNING id`;
+  if (!deleted[0]) return json({ error: "OAuth provider is not linked." }, 404);
+  await securityEvent(request, "oauth_unlinked", user.id, { provider });
+  return json({ ok: true });
+}
 export default async function handler(request: Request) {
   try {
     const path = new URL(request.url).pathname.replace(/^\/api\/auth\/?/, "").replace(/\/$/, "");
@@ -201,6 +238,10 @@ export default async function handler(request: Request) {
     if (path === "oauth/google/callback" && request.method === "GET") return oauthCallback(request, "google");
     if (path === "oauth/microsoft/start" && request.method === "GET") return oauthStart(request, "microsoft");
     if (path === "oauth/microsoft/callback" && request.method === "GET") return oauthCallback(request, "microsoft");
+    if (path === "oauth/google/link/start" && request.method === "POST") { const user = await getSessionUser(request); if (!user) return json({ error: "Authentication required." }, 401); return oauthStart(request, "google", user.id); }
+    if (path === "oauth/microsoft/link/start" && request.method === "POST") { const user = await getSessionUser(request); if (!user) return json({ error: "Authentication required." }, 401); return oauthStart(request, "microsoft", user.id); }
+    if (path === "oauth/google/unlink" && request.method === "POST") return unlinkOAuth(request, "google");
+    if (path === "oauth/microsoft/unlink" && request.method === "POST") return unlinkOAuth(request, "microsoft");
     return json({ error: "Not found." }, 404);
   } catch (error) {
     if (error instanceof Response) return error;
