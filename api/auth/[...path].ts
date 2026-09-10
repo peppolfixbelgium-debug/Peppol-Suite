@@ -18,8 +18,10 @@ function passwordInput(value: unknown): string {
   return value;
 }
 
-function redirect(path: string, status = 302, headers: Record<string, string> = {}) {
-  return new Response(null, { status, headers: { location: path, ...headers } });
+function redirect(path: string, status = 302, cookies: string[] = []) {
+  const headers = new Headers({ location: path });
+  for (const cookie of cookies) headers.append("set-cookie", cookie);
+  return new Response(null, { status, headers });
 }
 
 async function signup(request: Request) {
@@ -139,7 +141,7 @@ async function oauthStart(request: Request, provider: "google" | "microsoft") {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("state", state);
   url.searchParams.set("scope", provider === "google" ? "openid email profile" : "openid email profile User.Read");
-  return redirect(url.toString(), 302, { "set-cookie": oauthStateCookie(state) });
+  return redirect(url.toString(), 302, [oauthStateCookie(state)]);
 }
 
 async function oauthCallback(request: Request, provider: "google" | "microsoft") {
@@ -147,25 +149,24 @@ async function oauthCallback(request: Request, provider: "google" | "microsoft")
   const code = params.get("code") ?? "";
   const state = params.get("state") ?? "";
   const stateCookie = getCookie(request, "peppol_oauth_state");
-  const clearState = { "set-cookie": clearOAuthStateCookie() };
-  if (!code || !state || !stateCookie || stateCookie !== state) return redirect("/login?error=oauth", 302, clearState);
+  if (!code || !state || !stateCookie || stateCookie !== state) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const sql = getDb();
   const stateHash = await sha256(state);
   const states = await sql<{ redirect_uri: string }[]>`DELETE FROM oauth_states WHERE state_hash = ${stateHash} AND provider = ${provider} AND expires_at > now() RETURNING redirect_uri`;
-  if (!states[0]) return redirect("/login?error=oauth", 302, clearState);
+  if (!states[0]) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const clientId = requireEnv(provider === "google" ? "GOOGLE_CLIENT_ID" : "MICROSOFT_CLIENT_ID");
   const clientSecret = requireEnv(provider === "google" ? "GOOGLE_CLIENT_SECRET" : "MICROSOFT_CLIENT_SECRET");
   const tokenUrl = provider === "google" ? "https://oauth2.googleapis.com/token" : "https://login.microsoftonline.com/common/oauth2/v2.0/token";
   const tokenResponse = await fetch(tokenUrl, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: states[0].redirect_uri, grant_type: "authorization_code" }) });
-  if (!tokenResponse.ok) return redirect("/login?error=oauth", 302, clearState);
+  if (!tokenResponse.ok) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const tokens = await tokenResponse.json() as { access_token?: string };
-  if (!tokens.access_token) return redirect("/login?error=oauth", 302, clearState);
+  if (!tokens.access_token) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const profileResponse = await fetch(provider === "google" ? "https://openidconnect.googleapis.com/v1/userinfo" : "https://graph.microsoft.com/oidc/userinfo", { headers: { authorization: `Bearer ${tokens.access_token}` } });
-  if (!profileResponse.ok) return redirect("/login?error=oauth", 302, clearState);
+  if (!profileResponse.ok) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const profile = await profileResponse.json() as { sub?: string; email?: string; preferred_username?: string; name?: string };
   const providerId = profile.sub ?? "";
   const email = (profile.email ?? profile.preferred_username ?? "").trim().toLowerCase();
-  if (!providerId || !email) return redirect("/login?error=oauth", 302, clearState);
+  if (!providerId || !email) return redirect("/login?error=oauth", 302, [clearOAuthStateCookie()]);
   const existing = await sql<any[]>`SELECT u.id, u.email, u.name, u.role, u.plan_id, u.email_verified_at, u.disabled_at FROM accounts a JOIN users u ON u.id = a.user_id WHERE a.provider = ${provider} AND a.provider_account_id = ${providerId} LIMIT 1`;
   let user = existing[0];
   if (!user) {
@@ -179,10 +180,10 @@ async function oauthCallback(request: Request, provider: "google" | "microsoft")
       await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${user.id}, ${provider}, ${providerId}, ${email})`;
     }
   }
-  if (user.disabled_at) return redirect("/login?error=disabled", 302, clearState);
+  if (user.disabled_at) return redirect("/login?error=disabled", 302, [clearOAuthStateCookie()]);
   const session = await createSession(user.id);
   await securityEvent(request, "oauth_signin", user.id, { provider });
-  return redirect("/dashboard", 302, { "set-cookie": `${sessionCookie(session)}, ${clearOAuthStateCookie()}` });
+  return redirect("/dashboard", 302, [sessionCookie(session), clearOAuthStateCookie()]);
 }
 
 export default async function handler(request: Request) {
