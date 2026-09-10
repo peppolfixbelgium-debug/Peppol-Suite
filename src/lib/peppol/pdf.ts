@@ -46,9 +46,34 @@ export async function extractPdfText(
       onProgress?.({ stage: "page", page: i, total: limit });
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const text = content.items
-        .map((item) => ("str" in item ? item.str : ""))
-        .join(" ");
+      // pdf.js returns positioned text fragments rather than semantic lines.
+      // Preserve the visual line structure so invoice extraction can distinguish
+      // labels, totals and line items instead of receiving one giant paragraph.
+      const positioned = content.items
+        .filter((item): item is typeof item & { str: string; transform: number[] } =>
+          "str" in item && typeof item.str === "string" && Array.isArray(item.transform),
+        )
+        .map((item) => ({
+          text: item.str,
+          x: item.transform[4] ?? 0,
+          y: item.transform[5] ?? 0,
+        }))
+        .filter((item) => item.text.trim().length > 0);
+
+      const lineGroups: { y: number; items: { text: string; x: number }[] }[] = [];
+      for (const item of positioned) {
+        let group = lineGroups.find((candidate) => Math.abs(candidate.y - item.y) <= 2.5);
+        if (!group) {
+          group = { y: item.y, items: [] };
+          lineGroups.push(group);
+        }
+        group.items.push({ text: item.text, x: item.x });
+      }
+      lineGroups.sort((a, b) => b.y - a.y);
+      const text = lineGroups
+        .map((group) => group.items.sort((a, b) => a.x - b.x).map((item) => item.text).join(" ").trim())
+        .filter(Boolean)
+        .join("\n");
       pages.push({ pageNumber: i, text });
     }
 

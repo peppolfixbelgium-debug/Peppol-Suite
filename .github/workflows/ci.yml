@@ -1,0 +1,45 @@
+# Full validation uses the committed lockfile plus disposable PostgreSQL.
+name: CI
+
+on:
+  push:
+    branches: ["compliance-hardening", "auth-database-foundation"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: peppol_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d peppol_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/peppol_test
+      APP_URL: http://localhost:4173
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: auth-database-foundation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_auth_database.sql
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - run: npm run test:regression
+      - run: npm run test:oauth-security

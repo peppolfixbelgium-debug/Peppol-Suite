@@ -1,52 +1,44 @@
 import { create } from "zustand";
 
-type User = { id: string; name: string; email: string };
-type StoredAccount = User & { password: string };
+type User = { id: string; name: string | null; email: string; role: "user" | "admin"; planId: string; emailVerified: boolean };
 
 type AuthState = {
   user: User | null;
   hydrated: boolean;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 };
 
-const ACCOUNTS = "peppol-suite.accounts";
-const SESSION = "peppol-suite.session";
-
-function readAccounts(): StoredAccount[] {
-  try { return JSON.parse(localStorage.getItem(ACCOUNTS) || "[]"); } catch { return []; }
+async function request(path: string, init?: RequestInit): Promise<{ user?: User | null }> {
+  const response = await fetch(`/api/auth/${path}`, { credentials: "include", ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Authentication failed.");
+  return data;
 }
-function writeAccounts(accounts: StoredAccount[]) { localStorage.setItem(ACCOUNTS, JSON.stringify(accounts)); }
 
 export const useAuth = create<AuthState>((set) => ({
   user: null,
   hydrated: false,
-  hydrate: () => {
-    if (typeof window === "undefined") return;
+  hydrate: async () => {
     try {
-      const session = JSON.parse(localStorage.getItem(SESSION) || "null") as User | null;
-      set({ user: session, hydrated: true });
-    } catch { set({ user: null, hydrated: true }); }
+      const data = await request("session", { headers: {} });
+      set({ user: data.user ?? null, hydrated: true });
+    } catch {
+      set({ user: null, hydrated: true });
+    }
   },
   signUp: async (name, email, password) => {
-    const normalized = email.trim().toLowerCase();
-    const accounts = readAccounts();
-    if (accounts.some((a) => a.email === normalized)) throw new Error("An account with this email already exists.");
-    const user = { id: crypto.randomUUID(), name: name.trim() || normalized, email: normalized };
-    accounts.push({ ...user, password });
-    writeAccounts(accounts);
-    localStorage.setItem(SESSION, JSON.stringify(user));
-    set({ user, hydrated: true });
+    const data = await request("signup", { method: "POST", body: JSON.stringify({ name, email, password }) });
+    set({ user: data.user ?? null, hydrated: true });
   },
   signIn: async (email, password) => {
-    const normalized = email.trim().toLowerCase();
-    const account = readAccounts().find((a) => a.email === normalized && a.password === password);
-    if (!account) throw new Error("Invalid email or password.");
-    const { password: _password, ...user } = account;
-    localStorage.setItem(SESSION, JSON.stringify(user));
-    set({ user, hydrated: true });
+    const data = await request("signin", { method: "POST", body: JSON.stringify({ email, password }) });
+    set({ user: data.user ?? null, hydrated: true });
   },
-  signOut: () => { localStorage.removeItem(SESSION); set({ user: null, hydrated: true }); },
+  signOut: async () => {
+    await request("signout", { method: "POST", body: "{}" });
+    set({ user: null, hydrated: true });
+  },
 }));

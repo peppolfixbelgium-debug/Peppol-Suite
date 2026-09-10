@@ -6,22 +6,21 @@ export type ConversionRow = {
   total: string;
   currency: string;
   status: string;
-  issues: string;
+  issue_count?: number;
+  issues?: string;
   created_at: string;
 };
 
-function key(userId: string) { return `peppol.history.v1.${userId}`; }
-
-export function listConversions(userId: string): ConversionRow[] {
-  try {
-    const rows = JSON.parse(localStorage.getItem(key(userId)) ?? "[]");
-    return Array.isArray(rows) ? rows : [];
-  } catch { return []; }
+export async function listConversions(): Promise<ConversionRow[]> {
+  const response = await fetch("/api/conversions", { credentials: "include" });
+  if (!response.ok) throw new Error("Unable to load conversion history.");
+  const data = await response.json() as { conversions: ConversionRow[] };
+  return Array.isArray(data.conversions) ? data.conversions : [];
 }
 
-export function saveConversion(userId: string, data: Omit<ConversionRow, "id" | "created_at">) {
-  const row: ConversionRow = { ...data, id: crypto.randomUUID(), created_at: new Date().toISOString() };
-  const rows = [row, ...listConversions(userId)].slice(0, 100);
-  localStorage.setItem(key(userId), JSON.stringify(rows));
-  return row;
+export async function saveConversion(_userId: string, data: Omit<ConversionRow, "id" | "created_at">): Promise<ConversionRow> {
+  const response = await fetch("/api/conversions", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Unable to save conversion.");
+  return result.conversion as ConversionRow;
 }
