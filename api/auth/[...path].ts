@@ -1,5 +1,5 @@
 import {
-  appUrl, clearOAuthStateCookie, createSession, getSessionUser, getDb, getCookie, hashPassword, issueAuthToken, oauthStateCookie,
+  appUrl, clearOAuthStateCookie, createSession, getSessionUser, getCookie, hashPassword, issueAuthToken, oauthStateCookie,
   publicUser, rateLimit, requireSameOrigin, requestIp, revokeSession, securityEvent, sendEmail, sessionCookie, sha256, verifyPassword,
 } from "../_lib/auth";
 import { requireEnv } from "../_lib/db";
