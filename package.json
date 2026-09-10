@@ -6,7 +6,7 @@
   "engines": { "node": "24.x" },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run lint && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
