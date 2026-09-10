@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_key ON users (lower(email));
 
 CREATE TABLE IF NOT EXISTS accounts (
@@ -66,10 +65,12 @@ CREATE TABLE IF NOT EXISTS oauth_states (
   state_hash TEXT PRIMARY KEY,
   provider TEXT NOT NULL CHECK (provider IN ('google', 'microsoft')),
   redirect_uri TEXT NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS oauth_states_expiry_idx ON oauth_states(expires_at);
+CREATE INDEX IF NOT EXISTS oauth_states_user_idx ON oauth_states(user_id);
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -142,3 +143,6 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 
 CREATE INDEX IF NOT EXISTS users_plan_idx ON users(plan_id);
 CREATE INDEX IF NOT EXISTS users_role_idx ON users(role);
+
+ALTER TABLE oauth_states ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS oauth_states_user_idx ON oauth_states(user_id);
