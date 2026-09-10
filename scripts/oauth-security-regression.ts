@@ -35,11 +35,7 @@ async function makeJwt(provider: "google" | "microsoft", overrides: Record<strin
   const payload = jwtPart(claims);
   const signingInput = `${header}.${payload}`;
   const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", keyPair.privateKey, encoder.encode(signingInput));
-  return {
-    token: `${signingInput}.${base64url(signature)}`,
-    jwks: { keys: [publicJwk] },
-    claims,
-  };
+  return { token: `${signingInput}.${base64url(signature)}`, jwks: { keys: [publicJwk] }, claims };
 }
 
 async function testProviderValidation() {
@@ -48,7 +44,6 @@ async function testProviderValidation() {
     globalThis.fetch = async () => new Response(JSON.stringify(fixture.jwks), { status: 200, headers: { "content-type": "application/json" } });
     const claims = await verifyIdToken(provider, fixture.token, "client-test", "nonce-test");
     assert.equal(providerAccountId(provider, claims), provider === "google" ? "google-sub-123" : "test-tenant:object-123");
-
     await assert.rejects(() => verifyIdToken(provider, fixture.token, "wrong-audience", "nonce-test"));
     await assert.rejects(() => verifyIdToken(provider, fixture.token, "client-test", "wrong-nonce"));
 
@@ -84,21 +79,23 @@ function runDatabaseRegression() {
   assert.ok(databaseUrl, "DATABASE_URL is required for the OAuth database regression suite");
   const sql = `
 BEGIN;
-INSERT INTO users (email, password_hash, email_verified_at) VALUES ('oauth-regression@example.test', 'synthetic-password-hash', now()) RETURNING id \\gset test_user_
-INSERT INTO users (email, email_verified_at) VALUES ('oauth-link-target@example.test', now()) RETURNING id \\gset link_user_
-INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (:'test_user_id', 'google', 'existing-google-sub', 'oauth-regression@example.test');
+INSERT INTO users (email, password_hash, email_verified_at) VALUES ('oauth-regression@example.test', 'synthetic-password-hash', now());
+INSERT INTO users (email, email_verified_at) VALUES ('oauth-link-target@example.test', now());
+INSERT INTO accounts (user_id, provider, provider_account_id, email)
+  SELECT id, 'google', 'existing-google-sub', email FROM users WHERE email = 'oauth-regression@example.test';
 
 DO $$
 DECLARE first_user uuid; second_user uuid;
 BEGIN
   SELECT user_id INTO first_user FROM accounts WHERE provider = 'google' AND provider_account_id = 'existing-google-sub';
   IF first_user IS NULL THEN RAISE EXCEPTION 'existing OAuth identity lookup failed'; END IF;
-  IF first_user <> :'test_user_id'::uuid THEN RAISE EXCEPTION 'existing OAuth identity mapped to wrong user'; END IF;
   SELECT id INTO second_user FROM users WHERE lower(email) = 'oauth-regression@example.test';
   IF second_user <> first_user THEN RAISE EXCEPTION 'same-email account lookup did not resolve to existing user'; END IF;
 END $$;
 
-INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at) VALUES ('oauth-state-replay-test', 'google', 'https://example.test/callback', :'link_user_id', now() + interval '10 minutes');
+INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at)
+  SELECT 'oauth-state-replay-test', 'google', 'https://example.test/callback', id, now() + interval '10 minutes'
+  FROM users WHERE email = 'oauth-link-target@example.test';
 DO $$
 DECLARE first_state text; second_state text;
 BEGIN
@@ -108,7 +105,9 @@ BEGIN
   IF second_state IS NOT NULL THEN RAISE EXCEPTION 'state replay was accepted'; END IF;
 END $$;
 
-INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at) VALUES ('oauth-state-expired-test', 'microsoft', 'https://example.test/callback', :'link_user_id', now() - interval '1 minute');
+INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at)
+  SELECT 'oauth-state-expired-test', 'microsoft', 'https://example.test/callback', id, now() - interval '1 minute'
+  FROM users WHERE email = 'oauth-link-target@example.test';
 DO $$
 DECLARE expired_state text;
 BEGIN
@@ -116,17 +115,20 @@ BEGIN
   IF expired_state IS NOT NULL THEN RAISE EXCEPTION 'expired state was accepted'; END IF;
 END $$;
 
-INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (:'link_user_id', 'microsoft', 'tenant-a:object-a', 'oauth-link-target@example.test');
+INSERT INTO accounts (user_id, provider, provider_account_id, email)
+  SELECT id, 'microsoft', 'tenant-a:object-a', email FROM users WHERE email = 'oauth-link-target@example.test';
 DO $$
-DECLARE account_count integer; password_value text; state_user uuid;
+DECLARE account_count integer; password_value text; state_user uuid; link_user uuid;
 BEGIN
-  SELECT count(*)::int INTO account_count FROM accounts WHERE user_id = :'link_user_id'::uuid;
+  SELECT id INTO link_user FROM users WHERE email = 'oauth-link-target@example.test';
+  SELECT count(*)::int INTO account_count FROM accounts WHERE user_id = link_user;
   IF account_count <> 1 THEN RAISE EXCEPTION 'link user should have exactly one OAuth account'; END IF;
-  SELECT password_hash INTO password_value FROM users WHERE id = :'link_user_id'::uuid;
+  SELECT password_hash INTO password_value FROM users WHERE id = link_user;
   IF password_value IS NOT NULL THEN RAISE EXCEPTION 'unlink safety fixture must have no password'; END IF;
-  INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at) VALUES ('oauth-link-binding-test', 'google', 'https://example.test/callback', :'link_user_id', now() + interval '10 minutes');
+  INSERT INTO oauth_states (state_hash, provider, redirect_uri, user_id, expires_at)
+    VALUES ('oauth-link-binding-test', 'google', 'https://example.test/callback', link_user, now() + interval '10 minutes');
   SELECT user_id INTO state_user FROM oauth_states WHERE state_hash = 'oauth-link-binding-test';
-  IF state_user <> :'link_user_id'::uuid THEN RAISE EXCEPTION 'link state was not bound to authenticated user'; END IF;
+  IF state_user <> link_user THEN RAISE EXCEPTION 'link state was not bound to authenticated user'; END IF;
 END $$;
 
 ROLLBACK;
