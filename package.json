@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test:regression": "vite build --ssr scripts/regression.ts --outDir .regression-dist && node .regression-dist/regression.js"
+    "test:regression": "vite build --ssr scripts/regression.ts --outDir .regression-dist && node .regression-dist/regression.js",
+    "test:oauth-security": "vite build --ssr scripts/oauth-security-regression.ts --outDir .oauth-regression-dist && node .oauth-regression-dist/oauth-security-regression.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
