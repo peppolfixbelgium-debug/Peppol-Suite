@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
@@ -145,4 +147,3 @@ CREATE INDEX IF NOT EXISTS users_plan_idx ON users(plan_id);
 CREATE INDEX IF NOT EXISTS users_role_idx ON users(role);
 
 ALTER TABLE oauth_states ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS oauth_states_user_idx ON oauth_states(user_id);
