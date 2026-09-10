@@ -132,7 +132,7 @@ export function requireSameOrigin(request: Request): void {
   const method = request.method.toUpperCase();
   if (!["POST", "PUT", "PATCH", "DELETE"].includes(method)) return;
   const origin = request.headers.get("origin");
-  if (!origin) return;
+  if (!origin) throw new Response(JSON.stringify({ error: "Request origin is required." }), { status: 403, headers: { "content-type": "application/json" } });
   const appUrl = requireEnv("APP_URL").replace(/\/$/, "");
   if (origin !== appUrl) throw new Response(JSON.stringify({ error: "Invalid request origin." }), { status: 403, headers: { "content-type": "application/json" } });
 }
@@ -151,14 +151,25 @@ export async function rateLimit(request: Request, bucket: string, limit: number,
   const ip = requestIp(request) ?? "unknown";
   const key = `${bucket}:${ip}`;
   const sql = getDb();
-  const rows = await sql<{ request_count: number; window_started_at: string }[]>`SELECT request_count, window_started_at FROM rate_limits WHERE key = ${key}`;
-  const now = Date.now();
-  if (!rows[0] || now - new Date(rows[0].window_started_at).getTime() >= windowSeconds * 1000) {
-    await sql`INSERT INTO rate_limits (key, window_started_at, request_count) VALUES (${key}, now(), 1) ON CONFLICT (key) DO UPDATE SET window_started_at = now(), request_count = 1`;
-    return;
+  const rows = await sql<{ request_count: number; window_started_at: string }[]>`
+    INSERT INTO rate_limits (key, window_started_at, request_count)
+    VALUES (${key}, now(), 1)
+    ON CONFLICT (key) DO UPDATE SET
+      request_count = CASE
+        WHEN rate_limits.window_started_at <= now() - (${windowSeconds} * interval '1 second') THEN 1
+        WHEN rate_limits.request_count < ${limit} THEN rate_limits.request_count + 1
+        ELSE rate_limits.request_count
+      END,
+      window_started_at = CASE
+        WHEN rate_limits.window_started_at <= now() - (${windowSeconds} * interval '1 second') THEN now()
+        ELSE rate_limits.window_started_at
+      END
+    RETURNING request_count, window_started_at
+  `;
+  if (Number(rows[0]?.request_count ?? 0) >= limit) {
+    const retryAfter = Math.max(1, Math.ceil((windowSeconds * 1000 - (Date.now() - new Date(rows[0].window_started_at).getTime())) / 1000));
+    throw new Response(JSON.stringify({ error: "Too many requests. Try again later." }), { status: 429, headers: { "content-type": "application/json", "retry-after": String(retryAfter) } });
   }
-  if (Number(rows[0].request_count) >= limit) throw new Response(JSON.stringify({ error: "Too many requests. Try again later." }), { status: 429, headers: { "content-type": "application/json", "retry-after": String(Math.ceil((windowSeconds * 1000 - (now - new Date(rows[0].window_started_at).getTime())) / 1000)) } });
-  await sql`UPDATE rate_limits SET request_count = request_count + 1 WHERE key = ${key}`;
 }
 
 export async function issueAuthToken(userId: string, type: "email_verification" | "password_reset"): Promise<string> {
@@ -185,5 +196,3 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
 export function appUrl(path: string): string {
   return `${requireEnv("APP_URL").replace(/\/$/, "")}${path}`;
 }
-
-export { SESSION_COOKIE };
