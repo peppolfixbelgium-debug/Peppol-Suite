@@ -232,22 +232,28 @@ async function unlinkOAuth(request: Request, provider: "google" | "microsoft") {
 }
 
 export default async function handler(request: Request) {
-  const path = new URL(request.url).pathname.replace(/^\/api\/auth\/?/, "");
-  if (request.method === "OPTIONS") return new Response(null, { status: 204 });
-  if (path === "signup" && request.method === "POST") return signup(request);
-  if (path === "signin" && request.method === "POST") return signin(request);
-  if (path === "signout" && request.method === "POST") return signout(request);
-  if (path === "session" && request.method === "GET") return session(request);
-  if (path === "verify" && request.method === "GET") return verify(request);
-  if (path === "reset-request" && request.method === "POST") return resetRequest(request);
-  if (path === "reset-password" && request.method === "POST") return resetPassword(request);
-  if (path === "oauth/google/start" && request.method === "GET") return oauthStart(request, "google");
-  if (path === "oauth/google/callback" && request.method === "GET") return oauthCallback(request, "google");
-  if (path === "oauth/microsoft/start" && request.method === "GET") return oauthStart(request, "microsoft");
-  if (path === "oauth/microsoft/callback" && request.method === "GET") return oauthCallback(request, "microsoft");
-  if (path === "oauth/google/link/start" && request.method === "GET") { const user = await getSessionUser(request); return oauthStart(request, "google", user?.id ?? null); }
-  if (path === "oauth/microsoft/link/start" && request.method === "GET") { const user = await getSessionUser(request); return oauthStart(request, "microsoft", user?.id ?? null); }
-  if (path === "oauth/google/unlink" && request.method === "POST") return unlinkOAuth(request, "google");
-  if (path === "oauth/microsoft/unlink" && request.method === "POST") return unlinkOAuth(request, "microsoft");
-  return json({ error: "Not found." }, 404);
+  try {
+    const path = new URL(request.url).pathname.replace(/^\/api\/auth\/?/, "").replace(/\/$/, "");
+    if (request.method === "POST") requireSameOrigin(request);
+    if (path === "signup" && request.method === "POST") return signup(request);
+    if (path === "signin" && request.method === "POST") return signin(request);
+    if (path === "signout" && request.method === "POST") return signout(request);
+    if (path === "session" && request.method === "GET") return session(request);
+    if (path === "verify" && request.method === "GET") return verify(request);
+    if (path === "password-reset/request" && request.method === "POST") return resetRequest(request);
+    if (path === "password-reset/complete" && request.method === "POST") return resetPassword(request);
+    if (path === "oauth/google/start" && request.method === "GET") return oauthStart(request, "google");
+    if (path === "oauth/google/callback" && request.method === "GET") return oauthCallback(request, "google");
+    if (path === "oauth/microsoft/start" && request.method === "GET") return oauthStart(request, "microsoft");
+    if (path === "oauth/microsoft/callback" && request.method === "GET") return oauthCallback(request, "microsoft");
+    if (path === "oauth/google/link/start" && request.method === "POST") { const user = await getSessionUser(request); if (!user) return json({ error: "Authentication required." }, 401); return oauthStart(request, "google", user.id); }
+    if (path === "oauth/microsoft/link/start" && request.method === "POST") { const user = await getSessionUser(request); if (!user) return json({ error: "Authentication required." }, 401); return oauthStart(request, "microsoft", user.id); }
+    if (path === "oauth/google/unlink" && request.method === "POST") return unlinkOAuth(request, "google");
+    if (path === "oauth/microsoft/unlink" && request.method === "POST") return unlinkOAuth(request, "microsoft");
+    return json({ error: "Not found." }, 404);
+  } catch (error) {
+    if (error instanceof Response) return error;
+    console.error("auth handler error", error);
+    return json({ error: "Authentication service unavailable." }, 500);
+  }
 }
