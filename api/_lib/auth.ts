@@ -46,7 +46,7 @@ export async function hashPassword(password: string): Promise<string> {
   crypto.getRandomValues(salt);
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt, iterations: PASSWORD_ITERATIONS, hash: "SHA-256" },
+    { name: "PBKDF2", salt: salt as unknown as BufferSource, iterations: PASSWORD_ITERATIONS, hash: "SHA-256" },
     key,
     256,
   );
@@ -58,7 +58,7 @@ export async function verifyPassword(password: string, encoded: string): Promise
   if (algorithm !== PASSWORD_ALGORITHM || Number(iterationsRaw) !== PASSWORD_ITERATIONS || !saltRaw || !hashRaw) return false;
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", salt: fromBase64url(saltRaw), iterations: PASSWORD_ITERATIONS, hash: "SHA-256" },
+    { name: "PBKDF2", salt: fromBase64url(saltRaw) as unknown as BufferSource, iterations: PASSWORD_ITERATIONS, hash: "SHA-256" },
     key,
     256,
   );
