@@ -7,6 +7,8 @@ export const Route = createRootRoute({ component: Root });
 
 function Root() {
   const hydrate = useAuth((s) => s.hydrate);
-  useEffect(() => hydrate(), [hydrate]);
+  useEffect(() => {
+    void hydrate();
+  }, [hydrate]);
   return <Shell><Outlet /></Shell>;
 }
