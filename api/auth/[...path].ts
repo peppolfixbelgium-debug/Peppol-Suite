@@ -195,24 +195,44 @@ async function oauthCallback(request: Request, provider: "google" | "microsoft")
     currentUserId = current.id;
   }
   const byEmail = !states[0].user_id && !user && email ? await sql<any[]>`SELECT id FROM users WHERE lower(email) = ${email} LIMIT 1` : [];
-  if (byEmail[0] && !user) return redirect("/login?error=account_exists", 302, [clearOAuthStateCookie()]);
-  if (states[0].user_id && user && user.id !== currentUserId) return redirect("/login?error=oauth_linked", 302, [clearOAuthStateCookie()]);
-  if (states[0].user_id) {
-    if (!user) await sql`INSERT INTO accounts (user_id, provider, provider_account_id) VALUES (${currentUserId}, ${provider}, ${accountId})`;
-    else user = await sql<any[]>`SELECT u.id, u.email, u.name, u.role, u.plan_id, u.email_verified_at, u.disabled_at FROM users u WHERE u.id = ${currentUserId}`.then(rows => rows[0]);
-  } else if (!user) {
-    const rows = await sql<any[]>`INSERT INTO users (email, name, email_verified_at) VALUES (${email}, ${claims.name ?? null}, now()) RETURNING id, email, name, role, plan_id, email_verified_at, disabled_at`;
-    user = rows[0];
-    await sql`INSERT INTO accounts (user_id, provider, provider_account_id) VALUES (${user.id}, ${provider}, ${accountId})`;
+  const decision = decideOAuthLink(user?.id ?? null, byEmail[0]?.id ?? null, currentUserId);
+  if (decision === "reject_already_linked") return redirect("/dashboard?error=oauth_already_linked", 302, [clearOAuthStateCookie()]);
+  if (decision === "link") {
+    if (!currentUserId) return redirect("/login?error=oauth_link", 302, [clearOAuthStateCookie()]);
+    if (!user) {
+      await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${currentUserId}, ${provider}, ${accountId}, ${email || null})`;
+      await securityEvent(request, "oauth_linked", currentUserId, { provider });
+    }
+    return redirect("/dashboard", 302, [clearOAuthStateCookie()]);
   }
+  if (decision === "reject_existing_email") return redirect("/login?error=account_exists", 302, [clearOAuthStateCookie()]);
+  if (decision === "create") {
+    if (!email) return redirect("/login?error=oauth_email", 302, [clearOAuthStateCookie()]);
+    const created = await sql<any[]>`INSERT INTO users (email, name, email_verified_at) VALUES (${email}, ${claims.name ?? null}, ${provider === "google" ? new Date().toISOString() : null}) RETURNING id, email, name, role, plan_id, email_verified_at, disabled_at`;
+    user = created[0];
+    await sql`INSERT INTO accounts (user_id, provider, provider_account_id, email) VALUES (${user.id}, ${provider}, ${accountId}, ${email})`;
+  }
+  if (!user || user.disabled_at) return redirect("/login?error=disabled", 302, [clearOAuthStateCookie()]);
   const session = await createSession(user.id);
-  await securityEvent(request, states[0].user_id ? "oauth_linked" : "oauth_signin", user.id, { provider });
-  return redirect("/", 302, [sessionCookie(session), clearOAuthStateCookie()]);
+  await securityEvent(request, "oauth_signin", user.id, { provider });
+  return redirect("/dashboard", 302, [sessionCookie(session), clearOAuthStateCookie()]);
+}
+async function unlinkOAuth(request: Request, provider: "google" | "microsoft") {
+  const user = await getSessionUser(request);
+  if (!user) return json({ error: "Authentication required." }, 401);
+  requireSameOrigin(request);
+  const sql = getDb();
+  const rows = await sql<{ password_hash: string | null; account_count: number }[]>`SELECT u.password_hash, (SELECT count(*)::int FROM accounts WHERE user_id = u.id) AS account_count FROM users u WHERE u.id = ${user.id}`;
+  if (!rows[0]) return json({ error: "Account not found." }, 404);
+  if (!rows[0].password_hash && Number(rows[0].account_count) <= 1) return json({ error: "Add a password or another OAuth provider before unlinking this provider." }, 409);
+  const deleted = await sql<any[]>`DELETE FROM accounts WHERE user_id = ${user.id} AND provider = ${provider} RETURNING id`;
+  if (!deleted[0]) return json({ error: "OAuth provider is not linked." }, 404);
+  await securityEvent(request, "oauth_unlinked", user.id, { provider });
+  return json({ ok: true });
 }
 
 export default async function handler(request: Request) {
-  const parts = new URL(request.url).pathname.split("/").filter(Boolean);
-  const path = parts.slice(2).join("/");
+  const path = new URL(request.url).pathname.replace(/^\/api\/auth\/?/, "");
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   if (path === "signup" && request.method === "POST") return signup(request);
   if (path === "signin" && request.method === "POST") return signin(request);
@@ -227,19 +247,7 @@ export default async function handler(request: Request) {
   if (path === "oauth/microsoft/callback" && request.method === "GET") return oauthCallback(request, "microsoft");
   if (path === "oauth/google/link/start" && request.method === "GET") { const user = await getSessionUser(request); return oauthStart(request, "google", user?.id ?? null); }
   if (path === "oauth/microsoft/link/start" && request.method === "GET") { const user = await getSessionUser(request); return oauthStart(request, "microsoft", user?.id ?? null); }
-  if (path === "oauth/google/unlink" && request.method === "POST") return unlink(request, "google");
-  if (path === "oauth/microsoft/unlink" && request.method === "POST") return unlink(request, "microsoft");
+  if (path === "oauth/google/unlink" && request.method === "POST") return unlinkOAuth(request, "google");
+  if (path === "oauth/microsoft/unlink" && request.method === "POST") return unlinkOAuth(request, "microsoft");
   return json({ error: "Not found." }, 404);
-}
-
-async function unlink(request: Request, provider: "google" | "microsoft") {
-  requireSameOrigin(request);
-  const user = await getSessionUser(request);
-  if (!user) return json({ error: "Authentication required." }, 401);
-  const sql = getDb();
-  const accounts = await sql<any[]>`SELECT provider FROM accounts WHERE user_id = ${user.id}`;
-  if (accounts.length <= 1 && !user.password_hash) return json({ error: "Add a password or another OAuth account before unlinking." }, 409);
-  await sql`DELETE FROM accounts WHERE user_id = ${user.id} AND provider = ${provider}`;
-  await securityEvent(request, "oauth_unlinked", user.id, { provider });
-  return json({ ok: true });
 }
