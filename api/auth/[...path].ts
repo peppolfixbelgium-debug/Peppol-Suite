@@ -2,7 +2,7 @@ import {
   appUrl, clearOAuthStateCookie, createSession, getSessionUser, getCookie, hashPassword, issueAuthToken, oauthStateCookie,
   publicUser, rateLimit, requireSameOrigin, requestIp, revokeSession, securityEvent, sendEmail, sessionCookie, sha256, verifyPassword,
 } from "../_lib/auth";
-import { requireEnv } from "../_lib/db";
+import { getDb, requireEnv } from "../_lib/db";
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", ...headers } });
