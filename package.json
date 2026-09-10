@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:regression": "vite build --ssr scripts/regression.ts --outDir .regression-dist && node .regression-dist/regression.js",
-    "test:oauth-security": "vite build --ssr scripts/oauth-security-regression.ts --outDir .oauth-regression-dist && node .oauth-regression-dist/oauth-security-regression.js"
+    "test:oauth-security": "vite build --ssr scripts/oauth-security-regression.ts --outDir .oauth-regression-dist && node .oauth-regression-dist/oauth-security-regression.js",
+    "test:vercel-api-esm": "vite build --ssr scripts/vercel-api-esm-regression.ts --outDir .vercel-api-esm-dist && node .vercel-api-esm-dist/vercel-api-esm-regression.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -20,15 +21,15 @@
     "@tanstack/react-router": "^1.170.0",
     "@tanstack/react-table": "^8.21.0",
     "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
+    "clsx": "^2.1.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.510.0",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwind-merge": "^3.5.0",
+    "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.3.0",
-    "tw-animate-css": "^1.3.4",
+    "tw-animate-css": "^1.3.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
