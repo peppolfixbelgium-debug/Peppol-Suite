@@ -14,6 +14,6 @@ assert.match(bulkSource, /conversionRemaining-=1/, "Each successfully persisted 
 assert.match(apiSource, /input\.kind !== \"conversion\"/, "Conversion history API must reject the obsolete bulk kind");
 assert.doesNotMatch(apiSource, /kind === \"bulk\"/, "Conversion history API must not provide a quota-bypassing bulk record path");
 assert.match(apiSource, /WITH quota AS/, "Conversion quota and history must be committed atomically");
-assert.match(usageSource, /plan_id==="free"/, "The bulk usage endpoint must enforce the Free-plan entitlement server-side");
+assert.match(usageSource, /plan\?\.plan_id===\"free\"/, "The bulk usage endpoint must enforce the Free-plan entitlement server-side");
 assert.match(usageSource, /bulk_used=usage_quota\.bulk_used\+1/, "A bulk job must increment bulk usage atomically");
 console.log("Bulk history/quota regression: PASS");
