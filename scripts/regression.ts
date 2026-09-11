@@ -1,8 +1,13 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { extractInvoice } from "@/lib/peppol/extract";
 import { validateInvoice, validateUblXml } from "@/lib/peppol/validate";
 import { buildUblXml, calculateTotals } from "@/lib/peppol/xml";
 import { isValidIban } from "@/lib/utils";
+
+const callbackSource = readFileSync("api/auth/oauth/google/callback.ts", "utf8");
+assert.ok(!callbackSource.includes("google_oauth_browser_discrepancy"));
+assert.ok(!callbackSource.includes("google_oauth_token_exchange_diagnostic"));
 
 const sample = `FACTUUR / FACTURE
 Acme Atelier BV
