@@ -5,6 +5,7 @@ const quotaSource = readFileSync("src/lib/peppol/quota.ts", "utf8");
 const converterSource = readFileSync("src/routes/converter.tsx", "utf8");
 const bulkSource = readFileSync("src/routes/bulk.tsx", "utf8");
 const conversionApi = readFileSync("api/conversions.ts", "utf8");
+const usageApi = readFileSync("api/usage.ts", "utf8");
 const pricingSource = readFileSync("src/lib/peppol/pricing.ts", "utf8");
 const privacySource = readFileSync("src/routes/privacy.tsx", "utf8");
 
@@ -14,8 +15,14 @@ assert.match(converterSource, /consumeAnonymousQuota\(\)/, "Anonymous successful
 assert.match(converterSource, /saveConversion\([^\n]+issue_count:result\.issues\.length/, "Authenticated conversion history must persist the actual validation issue count");
 assert.match(converterSource, /if\(conversionSaved\)/, "Repeated downloads must not create duplicate conversion records");
 assert.match(conversionApi, /WITH quota AS/, "Server conversion quota and history must be committed atomically in one SQL statement");
-assert.match(conversionApi, /Invalid conversion kind/, "Unknown conversion kinds must not silently consume the single-conversion quota");
-assert.match(conversionApi, /plan_id === \"free\"/, "Free accounts must not receive the Pro-only bulk entitlement");
+assert.match(conversionApi, /input\.kind !== \"conversion\"/, "Conversion API must accept only the single-conversion entitlement path");
+assert.doesNotMatch(conversionApi, /kind === \"bulk\"/, "Conversion API must not provide a quota-bypassing bulk record path");
+assert.match(usageApi, /plan\?\.plan_id===\"free\"/, "Bulk entitlement must be enforced server-side for Free accounts");
+assert.match(usageApi, /bulk_used=usage_quota\.bulk_used\+1/, "Bulk job usage must be atomic");
+assert.match(bulkSource, /consumeBulkQuota\(\)/, "Bulk conversion must reserve a bulk job entitlement");
+assert.match(bulkSource, /bulkReserved/, "One bulk upload must consume one bulk job entitlement");
+assert.match(bulkSource, /saveConversion\(/, "Each successful bulk PDF must be persisted to history");
+assert.doesNotMatch(bulkSource, /saveConversion\([^\n]+\"bulk\"\)/, "Bulk PDFs must consume conversion allowance, not one bulk slot each");
 assert.match(bulkSource, /MAX_ZIP_BYTES=50\*1024\*1024/, "Bulk ZIP size must be bounded");
 assert.match(bulkSource, /MAX_ZIP_ENTRIES=100/, "Bulk ZIP entry count must be bounded");
 assert.match(bulkSource, /MAX_EXTRACTED_BYTES=100\*1024\*1024/, "Bulk extracted size must be bounded");

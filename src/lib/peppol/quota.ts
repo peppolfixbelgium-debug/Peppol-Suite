@@ -49,6 +49,15 @@ export async function fetchQuota(): Promise<QuotaState> {
   return { used, limit, remaining: Math.max(0, limit - used) };
 }
 
+export async function consumeBulkQuota(): Promise<{ used: number; limit: number; remaining: number }> {
+  const response = await fetch("/api/usage", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "bulk" }) });
+  const data = await response.json().catch(() => ({})) as { used?: unknown; limit?: unknown; error?: unknown };
+  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Monthly bulk limit reached.");
+  const used = Number(data.used) || 0;
+  const limit = Number(data.limit) || 0;
+  return { used, limit, remaining: Math.max(0, limit - used) };
+}
+
 export async function consumeQuota(): Promise<QuotaState> {
   const response = await fetch("/api/usage", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "conversion" }) });
   const data = await response.json().catch(() => ({}));
