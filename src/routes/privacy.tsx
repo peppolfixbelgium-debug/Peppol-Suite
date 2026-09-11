@@ -11,23 +11,40 @@ function Privacy() {
       <h1 className="font-display text-4xl tracking-tight">{t(lang, "privacy_title")}</h1>
       <div className="mt-8 space-y-4 text-sm leading-relaxed text-muted">
         <p>
-          Single conversions and bulk ZIP jobs run in your browser with pdf.js. The PDF is not uploaded to
-          our servers for those flows. Quota is stored in localStorage on this device.
+          PDF files are processed in your browser with PDF.js. The current single-file and bulk conversion
+          flows do not upload the PDF to our servers for parsing. Anonymous trial usage is tracked locally
+          in your browser using localStorage; this is intentionally a soft device-local quota.
         </p>
         <p>
-          If you sign in, we store account identity (email or social login) and conversion metadata: invoice
-          number, party names, totals, currency, status and issue counts. We do not store the PDF or the XML
-          body.
+          When you sign in, the service stores account information such as your email, name and authentication
+          provider/account identifier, plus hashed session and authentication tokens. Session cookies are
+          HttpOnly, SameSite=Lax and Secure in production.
         </p>
         <p>
-          Authentication uses Google, X, or email and password. We do not offer Microsoft, Apple, or itsme
-          sign-in in this product.
+          For signed-in conversion history and quota, we store conversion metadata including invoice number,
+          supplier and customer names, total, currency, status, issue count and creation time. The current
+          implementation does not store the uploaded PDF or generated XML body in the database.
         </p>
         <p>
-          We do not sell invoice data. We do not use conversion contents for advertising. Signed-in history
-          can be deleted by contacting us; local quota can be cleared by clearing site data.
+          You can currently sign in with Google or with email and password. We plan to add additional sign-in
+          options, including Microsoft and itsme®, as the product evolves. Availability may vary by region and
+          rollout stage.
         </p>
-        <p>This notice was last updated in April 2026.</p>
+        <p>
+          The production application is hosted on Vercel and uses Neon PostgreSQL for signed-in account,
+          quota and conversion-history data. Google is a current sign-in provider. Live payment processing
+          is not currently enabled.
+        </p>
+        <p>
+          There is currently no self-service account or conversion-history deletion control in the product.
+          Local anonymous quota can be cleared by clearing site data. Account retention and deletion procedures
+          require the product operator to define the applicable process.
+        </p>
+        <p>
+          This page describes the current technical implementation and is not a substitute for the final
+          legal privacy notice. Retention periods, data-controller details, processor terms and any legal
+          rights/obligations should be confirmed before production launch.
+        </p>
       </div>
     </main>
   );
