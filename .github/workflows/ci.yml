@@ -46,3 +46,4 @@ jobs:
       - run: npm run test:vercel-usage-adapter
       - run: npm run test:vercel-conversions-adapter
       - run: npm run test:vercel-api-auth-adapters
+      - run: npm run test:bulk-history

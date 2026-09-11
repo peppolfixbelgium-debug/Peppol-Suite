@@ -18,8 +18,8 @@ export async function listConversions(): Promise<ConversionRow[]> {
   return Array.isArray(data.conversions) ? data.conversions : [];
 }
 
-export async function saveConversion(_userId: string, data: Omit<ConversionRow, "id" | "created_at">): Promise<ConversionRow> {
-  const response = await fetch("/api/conversions", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify(data) });
+export async function saveConversion(_userId: string, data: Omit<ConversionRow, "id" | "created_at">, kind: "conversion" | "bulk" = "conversion"): Promise<ConversionRow> {
+  const response = await fetch("/api/conversions", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, kind, issue_count: data.issue_count ?? 0 }) });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Unable to save conversion.");
   return result.conversion as ConversionRow;
