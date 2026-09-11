@@ -23,7 +23,7 @@ for (const file of walk(root)) {
 
 for (const file of ["api/auth/oauth/google/start.ts", "api/auth/oauth/google/callback.ts"]) {
   const source = readFileSync(join(process.cwd(), file), "utf8");
-  if (!/export function GET\s*\(request: Request\)|export \{\s*GET\s*\};/.test(source)) {
+  if (!/export (?:async )?function GET\s*\(request: Request\)|export \{\s*GET\s*\};/.test(source)) {
     failures.push(`${file} must expose a Vercel fetch-style GET handler`);
   }
 }
