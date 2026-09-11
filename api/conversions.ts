@@ -1,9 +1,29 @@
+import { nodeRequestToWebRequest } from "./usage.js";
 import { getDb } from "./_lib/db.js";
 import { getSessionUser, requireSameOrigin, securityEvent } from "./_lib/auth.js";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
-export default async function handler(request: Request) {
+type VercelRequest = {
+  method?: string;
+  url?: string;
+  headers: Record<string, string | string[] | undefined>;
+  body?: unknown;
+  [key: string]: unknown;
+};
+type VercelResponse = {
+  statusCode?: number;
+  setHeader(name: string, value: string | string[]): VercelResponse;
+  end(body?: string): void;
+};
+
+async function sendWebResponse(response: Response, res: VercelResponse): Promise<void> {
+  res.statusCode = response.status;
+  response.headers.forEach((value, name) => res.setHeader(name, value));
+  res.end(await response.text());
+}
+
+async function handleConversionRequest(request: Request): Promise<Response> {
   try {
     const user = await getSessionUser(request);
     if (!user) return json({ error: "Authentication required." }, 401);
@@ -42,4 +62,8 @@ export default async function handler(request: Request) {
     console.error("conversion api error", error);
     return json({ error: "Conversion history service unavailable." }, 500);
   }
+}
+
+export default async function handler(request: VercelRequest, response: VercelResponse): Promise<void> {
+  await sendWebResponse(await handleConversionRequest(await nodeRequestToWebRequest(request)), response);
 }
