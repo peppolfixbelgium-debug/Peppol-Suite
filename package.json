@@ -17,6 +17,7 @@
     "test:vercel-conversions-adapter": "vite build --ssr scripts/vercel-conversions-request-regression.ts --outDir .vercel-conversions-adapter-dist && node .vercel-conversions-adapter-dist/vercel-conversions-request-regression.js",
     "test:vercel-api-auth-adapters": "vite build --ssr scripts/vercel-api-auth-adapter-regression.ts --outDir .vercel-api-auth-adapter-dist && node .vercel-api-auth-adapter-dist/vercel-api-auth-adapter-regression.js",
     "test:bulk-history": "vite build --ssr scripts/bulk-history-regression.ts --outDir .bulk-history-dist && node .bulk-history-dist/bulk-history-regression.js",
+    "test:freemium-product": "vite build --ssr scripts/freemium-product-regression.ts --outDir .freemium-product-dist && node .freemium-product-dist/freemium-product-regression.js",
     "test:auth-regression": "vite build --ssr scripts/auth-regression.ts --outDir .auth-regression-dist && node .auth-regression-dist/auth-regression.js"
   },
   "dependencies": {
