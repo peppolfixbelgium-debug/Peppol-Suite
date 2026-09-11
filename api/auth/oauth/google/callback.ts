@@ -28,6 +28,32 @@ function emit(correlationId: string, trace: Trace) {
   console.log("google_oauth_callback_stage_diagnostic", { correlationId, ...trace });
 }
 
+async function emitTokenExchange(correlationId: string, response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+  const responseIsJson = /application\/json/i.test(contentType);
+  let parsed = false;
+  let errorCode: string | null = null;
+  let errorDescription: string | null = null;
+  if (responseIsJson) {
+    try {
+      const payload = await response.clone().json() as { error?: unknown; error_description?: unknown };
+      parsed = Boolean(payload && typeof payload === "object");
+      if (typeof payload?.error === "string") errorCode = payload.error;
+      if (typeof payload?.error_description === "string") errorDescription = payload.error_description.slice(0, 500);
+    } catch {
+      parsed = false;
+    }
+  }
+  console.log("google_oauth_token_exchange_diagnostic", {
+    correlationId,
+    httpStatus: response.status,
+    responseIsJson,
+    expectedJsonFormat: responseIsJson && parsed,
+    errorCode,
+    errorDescription,
+  });
+}
+
 export async function GET(request: Request): Promise<Response> {
   const correlationId = crypto.randomUUID();
   const trace: Trace = {
@@ -64,6 +90,7 @@ export async function GET(request: Request): Promise<Response> {
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: stateRow.redirect_uri, grant_type: "authorization_code" }),
     });
+    await emitTokenExchange(correlationId, tokenResponse);
     if (!tokenResponse.ok) return fail();
     trace.token_exchange_passed = true;
 
