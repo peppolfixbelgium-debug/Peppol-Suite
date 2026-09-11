@@ -2,7 +2,7 @@ import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import { createUserWithFreePlan } from "../api/_lib/db.js";
 import { oauthStateCookie } from "../api/_lib/auth.js";
-import { authBoundary } from "../api/auth/[...path].js";
+import { authBoundary, consumeOAuthState, oauthStateBindingValid } from "../api/auth/[...path].js";
 
 const migration = readFileSync("migrations/001_auth_database.sql", "utf8");
 assert.match(migration, /'free', 'Free'/, "Migration must define the existing Free plan");
@@ -58,6 +58,49 @@ function testOAuthStateCookieAttributes() {
   assert.equal(response.headers.get("set-cookie"), cookie, "Web Response must preserve the OAuth state Set-Cookie header");
 }
 
+async function testOAuthStateFallbackAndSingleUse() {
+  type Row = { redirect_uri: string; user_id: string | null; expiresAt: number; consumed: boolean };
+  const states = new Map<string, Row>();
+  const sql = (strings: TemplateStringsArray, ...values: unknown[]): Promise<Row[]> => {
+    const stateHash = String(values[0]);
+    const row = states.get(stateHash);
+    if (!row || row.consumed || row.expiresAt <= Date.now()) return Promise.resolve([]);
+    row.consumed = true;
+    return Promise.resolve([{ redirect_uri: row.redirect_uri, user_id: row.user_id }]);
+  };
+
+  const validState = "synthetic-random-oauth-state";
+  const validHash = await (await import("../api/_lib/auth.js")).sha256(validState);
+  states.set(validHash, { redirect_uri: "https://peppol-suite.vercel.app/api/auth/oauth/google/callback", user_id: null, expiresAt: Date.now() + 60_000, consumed: false });
+
+  assert.equal(oauthStateBindingValid(validState, validState), true, "Cookie + matching DB state must pass the binding gate");
+  assert.ok(await consumeOAuthState(sql, validState, "google"), "Cookie + matching DB state must be consumable");
+
+  const noCookieState = "synthetic-no-cookie-state";
+  const noCookieHash = await (await import("../api/_lib/auth.js")).sha256(noCookieState);
+  states.set(noCookieHash, { redirect_uri: "https://peppol-suite.vercel.app/api/auth/oauth/google/callback", user_id: null, expiresAt: Date.now() + 60_000, consumed: false });
+  assert.equal(oauthStateBindingValid(noCookieState, null), true, "Missing auxiliary cookie must not reject a valid DB state");
+  assert.ok(await consumeOAuthState(sql, noCookieState, "google"), "Valid DB state must be consumable without the auxiliary cookie");
+
+  assert.equal(oauthStateBindingValid("wrong-state", "expected-state"), false, "Wrong returned state must be rejected when the cookie is present");
+
+  const expiredState = "synthetic-expired-state";
+  const expiredHash = await (await import("../api/_lib/auth.js")).sha256(expiredState);
+  states.set(expiredHash, { redirect_uri: "https://peppol-suite.vercel.app/api/auth/oauth/google/callback", user_id: null, expiresAt: Date.now() - 1, consumed: false });
+  assert.equal(await consumeOAuthState(sql, expiredState, "google"), null, "Expired DB state must be rejected");
+
+  const consumedState = "synthetic-consumed-state";
+  const consumedHash = await (await import("../api/_lib/auth.js")).sha256(consumedState);
+  states.set(consumedHash, { redirect_uri: "https://peppol-suite.vercel.app/api/auth/oauth/google/callback", user_id: null, expiresAt: Date.now() + 60_000, consumed: true });
+  assert.equal(await consumeOAuthState(sql, consumedState, "google"), null, "Consumed DB state must be rejected");
+
+  const reusableState = "synthetic-reuse-state";
+  const reusableHash = await (await import("../api/_lib/auth.js")).sha256(reusableState);
+  states.set(reusableHash, { redirect_uri: "https://peppol-suite.vercel.app/api/auth/oauth/google/callback", user_id: null, expiresAt: Date.now() + 60_000, consumed: false });
+  assert.ok(await consumeOAuthState(sql, reusableState, "google"), "First use of a valid state must succeed");
+  assert.equal(await consumeOAuthState(sql, reusableState, "google"), null, "OAuth state must not be reusable");
+}
+
 async function testInvalidAuthResponseBoundary() {
   const invalidJson = await authBoundary(
     new Request("http://localhost/api/auth/signup", { method: "POST" }),
@@ -76,5 +119,6 @@ async function testInvalidAuthResponseBoundary() {
 
 await testFreePlanAssignment();
 testOAuthStateCookieAttributes();
+await testOAuthStateFallbackAndSingleUse();
 await testInvalidAuthResponseBoundary();
 console.log("Authentication regression suite: PASS");
