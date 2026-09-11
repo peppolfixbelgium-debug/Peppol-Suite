@@ -84,7 +84,7 @@ export function sessionCookie(token: string, maxAge = SESSION_DAYS * 86400): str
 
 export function oauthStateCookie(state: string, maxAge = 600): string {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(state)}; Path=/api/auth/oauth; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
+  return `${OAUTH_STATE_COOKIE}=${encodeURIComponent(state)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
 }
 
 export function clearOAuthStateCookie(): string {
