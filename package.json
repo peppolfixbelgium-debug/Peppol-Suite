@@ -13,7 +13,7 @@
     "test:regression": "vite build --ssr scripts/regression.ts --outDir .regression-dist && node .regression-dist/regression.js",
     "test:oauth-security": "vite build --ssr scripts/oauth-security-regression.ts --outDir .oauth-regression-dist && node .oauth-regression-dist/oauth-security-regression.js",
     "test:vercel-api-esm": "vite build --ssr scripts/vercel-api-esm-regression.ts --outDir .vercel-api-esm-dist && node .vercel-api-esm-dist/vercel-api-esm-regression.js",
-    "test:vercel-usage-adapter": "vite build --ssr scripts/vercel-usage-request-regression.ts --outDir .vercel-usage-adapter-dist && node .vercel-usage-adapter-dist/vercel-usage-adapter.js",
+    "test:vercel-usage-adapter": "vite build --ssr scripts/vercel-usage-request-regression.ts --outDir .vercel-usage-adapter-dist && node .vercel-usage-adapter-dist/vercel-usage-request-regression.js",
     "test:vercel-conversions-adapter": "vite build --ssr scripts/vercel-conversions-request-regression.ts --outDir .vercel-conversions-adapter-dist && node .vercel-conversions-adapter-dist/vercel-conversions-request-regression.js",
     "test:vercel-api-auth-adapters": "vite build --ssr scripts/vercel-api-auth-adapter-regression.ts --outDir .vercel-api-auth-adapter-dist && node .vercel-api-auth-adapter-dist/vercel-api-auth-adapter-regression.js",
     "test:auth-regression": "vite build --ssr scripts/auth-regression.ts --outDir .auth-regression-dist && node .auth-regression-dist/auth-regression.js"
