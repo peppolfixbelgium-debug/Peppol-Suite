@@ -3,13 +3,17 @@ import { readFileSync } from "node:fs";
 
 const bulkSource = readFileSync("src/routes/bulk.tsx", "utf8");
 const apiSource = readFileSync("api/conversions.ts", "utf8");
+const usageSource = readFileSync("api/usage.ts", "utf8");
 
-assert.match(bulkSource, /saveConversion\(/, "Bulk conversion must persist conversion metadata");
-assert.match(bulkSource, /saveConversion\([^\n]+\"bulk\"\)/, "Bulk conversion must use the bulk quota/history path");
-assert.doesNotMatch(bulkSource, /fetch\(\"\/api\/usage\",\{method:\"POST\"/, "Bulk UI must not increment quota separately from history persistence");
-assert.match(bulkSource, /let consumed=0/, "Bulk quota accounting must track successful conversions separately from error rows");
-assert.match(bulkSource, /consumed\+=1/, "Only successfully persisted conversions may consume a bulk slot");
-assert.match(apiSource, /input\.kind === \"bulk\"/, "Conversion API must distinguish bulk records");
-assert.match(apiSource, /bulk_used = usage_quota\.bulk_used \+ 1/, "Bulk records must consume the bulk quota atomically");
-assert.match(apiSource, /INSERT INTO conversions/, "Bulk records must be persisted in conversion history");
+assert.match(bulkSource, /consumeBulkQuota\(\)/, "Bulk conversion must reserve one bulk job entitlement");
+assert.match(bulkSource, /saveConversion\(/, "Bulk conversion must persist each successful PDF in history");
+assert.doesNotMatch(bulkSource, /saveConversion\([^\n]+\"bulk\"\)/, "PDF conversion records must not consume the bulk-job quota");
+assert.match(bulkSource, /let bulkReserved=false/, "A batch must reserve the bulk entitlement once");
+assert.match(bulkSource, /let conversionRemaining=quota\.remaining/, "Bulk processing must track the authenticated conversion allowance");
+assert.match(bulkSource, /conversionRemaining-=1/, "Each successfully persisted PDF must consume one conversion allowance");
+assert.match(apiSource, /input\.kind !== \"conversion\"/, "Conversion history API must reject the obsolete bulk kind");
+assert.doesNotMatch(apiSource, /kind === \"bulk\"/, "Conversion history API must not provide a quota-bypassing bulk record path");
+assert.match(apiSource, /WITH quota AS/, "Conversion quota and history must be committed atomically");
+assert.match(usageSource, /plan_id==="free"/, "The bulk usage endpoint must enforce the Free-plan entitlement server-side");
+assert.match(usageSource, /bulk_used=usage_quota\.bulk_used\+1/, "A bulk job must increment bulk usage atomically");
 console.log("Bulk history/quota regression: PASS");
