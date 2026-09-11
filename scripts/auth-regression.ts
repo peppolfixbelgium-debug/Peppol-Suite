@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import { createUserWithFreePlan } from "../api/_lib/db.js";
+import { oauthStateCookie } from "../api/_lib/auth.js";
 import { authBoundary } from "../api/auth/[...path].js";
 
 const migration = readFileSync("migrations/001_auth_database.sql", "utf8");
@@ -43,6 +44,20 @@ async function testFreePlanAssignment() {
   assert.ok(googleUser.email_verified_at, "Google-created user must retain verified email behavior");
 }
 
+function testOAuthStateCookieAttributes() {
+  process.env.NODE_ENV = "production";
+  const cookie = oauthStateCookie("test-state");
+  const response = new Response(null, { status: 302, headers: { location: "https://accounts.google.com/" } });
+  response.headers.append("set-cookie", cookie);
+  assert.match(cookie, /^peppol_oauth_state=test-state;/, "OAuth state cookie must use the expected name and encoded state");
+  assert.match(cookie, /(?:^|; )Path=\//, "OAuth state cookie must be host-wide so the callback path always matches");
+  assert.match(cookie, /(?:^|; )Max-Age=600(?:;|$)/, "OAuth state cookie must remain available for the OAuth round trip");
+  assert.match(cookie, /(?:^|; )HttpOnly(?:;|$)/, "OAuth state cookie must remain inaccessible to page scripts");
+  assert.match(cookie, /(?:^|; )SameSite=Lax(?:;|$)/, "OAuth state cookie must be sent on Google's top-level GET callback");
+  assert.match(cookie, /(?:^|; )Secure(?:;|$)/, "Production OAuth state cookie must require HTTPS");
+  assert.equal(response.headers.get("set-cookie"), cookie, "Web Response must preserve the OAuth state Set-Cookie header");
+}
+
 async function testInvalidAuthResponseBoundary() {
   const invalidJson = await authBoundary(
     new Request("http://localhost/api/auth/signup", { method: "POST" }),
@@ -60,5 +75,6 @@ async function testInvalidAuthResponseBoundary() {
 }
 
 await testFreePlanAssignment();
+testOAuthStateCookieAttributes();
 await testInvalidAuthResponseBoundary();
 console.log("Authentication regression suite: PASS");
