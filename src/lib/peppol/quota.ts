@@ -1,9 +1,43 @@
 export const FREE_LIMIT = 5;
+export const ANONYMOUS_TRIAL_LIMIT = 3;
+const ANONYMOUS_QUOTA_KEY = "peppol-suite-anonymous-quota";
 
+type StoredAnonymousQuota = { period: string; used: number };
 export type QuotaState = { used: number; limit: number; remaining: number };
 
-export function getQuota(): QuotaState {
-  return { used: 0, limit: FREE_LIMIT, remaining: FREE_LIMIT };
+function currentPeriod(): string {
+  const now = new Date();
+  return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function readAnonymousUsage(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = window.localStorage.getItem(ANONYMOUS_QUOTA_KEY);
+    if (!raw) return 0;
+    const stored = JSON.parse(raw) as Partial<StoredAnonymousQuota>;
+    if (stored.period !== currentPeriod()) return 0;
+    return Math.max(0, Math.min(ANONYMOUS_TRIAL_LIMIT, Number(stored.used) || 0));
+  } catch {
+    return 0;
+  }
+}
+
+export function getAnonymousQuota(): QuotaState {
+  const used = readAnonymousUsage();
+  return { used, limit: ANONYMOUS_TRIAL_LIMIT, remaining: Math.max(0, ANONYMOUS_TRIAL_LIMIT - used) };
+}
+
+export function consumeAnonymousQuota(): QuotaState {
+  const current = getAnonymousQuota();
+  if (current.remaining <= 0 || typeof window === "undefined") return current;
+  const next = { period: currentPeriod(), used: current.used + 1 } satisfies StoredAnonymousQuota;
+  try {
+    window.localStorage.setItem(ANONYMOUS_QUOTA_KEY, JSON.stringify(next));
+  } catch {
+    // Anonymous quota is intentionally a soft, device-local trial mechanism.
+  }
+  return { used: next.used, limit: ANONYMOUS_TRIAL_LIMIT, remaining: Math.max(0, ANONYMOUS_TRIAL_LIMIT - next.used) };
 }
 
 export async function fetchQuota(): Promise<QuotaState> {
