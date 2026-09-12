@@ -1,6 +1,6 @@
 # Peppol Suite — Project State
 
-Last updated: 2026-09-12
+Last updated: 2026-09-13
 
 ## Source of truth
 - GitHub repository: `peppolfixbelgium-debug/Peppol-Suite`
@@ -16,7 +16,7 @@ Last updated: 2026-09-12
 - Production authenticated conversion recorded successfully: invoice `INV-2026-0412`, supplier `Acme Atelier BV`, customer `Studio Nord SRL`, total `1512.5000 EUR`, status `ok`, issue_count `0`.
 - PR #18 fixed bulk conversion-history persistence and quota accounting so successful bulk PDFs are represented in conversion history.
 - PR #19 established the freemium/quota/privacy foundation: anonymous browser trial, server-side authenticated conversion quota/history, Pro-only bulk entitlement, ZIP robustness limits, duplicate-output handling, and Free/Pro/Business product structure without publishing unfinalized prices.
-- PR #20 fixed bulk entitlement accounting: one bulk-job allowance per ZIP/batch, while successful PDFs consume the normal server-side conversion allowance/history separately. CI run 85 passed on the PR branch.
+- PR #20 fixed bulk entitlement accounting: one bulk-job allowance per ZIP/batch, while successful PDFs consume one conversion allowance/history separately. CI run 85 passed on the PR branch.
 - Shared project tracking established in `PROJECT-STATE.md` and issue #23.
 - **Legal/GDPR launch audit completed 2026-09-12.** A concrete Belgium/EU first-paying-customer legal launch checklist was completed and posted to Issue #23, covering GDPR/privacy, Terms, cookies/analytics, document retention, processors/subprocessors, DPA/international transfers, deletion/export, conversion/validation liability, Peppol positioning, Belgian 2026 e-invoicing, B2B/B2C and VAT boundaries, website disclosures, and lawyer/accountant gates.
 
@@ -27,7 +27,7 @@ Last updated: 2026-09-12
 - Canonical URL: `https://peppol-suite.vercel.app`
 - The latest production deployment contains the PR #18, #19, and #20 changes plus the shared-state documentation commit.
 - Latest production build completed successfully; Vercel build log contains only the existing large-chunk warning, not a build failure.
-- Production runtime error log query for the last two hours returned no error/fatal entries.
+- Production runtime error log query for the last two hours returned no error/fatal entries at the last recorded check.
 
 ## Current QA findings
 - Google OAuth: real-browser PASS; do not modify OAuth behavior.
@@ -38,7 +38,7 @@ Last updated: 2026-09-12
 - Current seeded Free plan remains 5 monthly conversions; final commercial limits/pricing are not approved yet.
 - Bulk is currently Pro-only; one bulk job consumes one bulk allowance, while each successfully persisted PDF consumes one conversion allowance.
 - Conversion history stores metadata, not PDF/XML files.
-- Production currently shows no Vercel error/fatal runtime entries in the last two hours of monitoring.
+- Production currently shows no Vercel error/fatal runtime entries in the last recorded two-hour check.
 
 ## Legal/GDPR launch status — 2026-09-12
 **Status: RED / launch blocker for first paying customer.** Core architecture is workable, but legal implementation and sign-off are not complete.
@@ -101,14 +101,36 @@ Last updated: 2026-09-12
 - Current conversion history stores metadata, not uploaded PDF/generated XML bodies.
 - Existing legal/product wording correctly avoids claiming Peppol Suite itself is an Access Point.
 
+## Founder ownership direction — 2026-09-13
+- Founder preference: **Belgian company owned/controlled by the Founder's wife**, who is expected to run the company while the Founder remains employed.
+- This is the working planning assumption for Company/Stripe/invoicing preparation, **not final legal/tax advice or incorporation approval**.
+- Before incorporation, Belgian professional advice must confirm ownership/control, director/manager role, employment/conflict considerations, remuneration, IP ownership/licensing, beneficial ownership, VAT/tax treatment and related-party implications as applicable.
+
+## Cross-team launch timeline — target, not commitment
+- **Sep 13–15:** close production QA/P0 engineering defects; complete Stripe test-mode implementation/audit; convert Legal/GDPR audit into concrete implementation backlog; finalize pricing recommendation; prepare company/VAT decision pack.
+- **Sep 16–18:** complete legal MUST-DO implementation; finish billing test lifecycle; finalize commercial pricing/quotas; prepare first-100 prospect outreach.
+- **Sep 19–21:** full regression/security review; legal/accounting professional review; company incorporation/Stripe entity preparation; final launch copy; founder-led acquisition begins.
+- **Sep 22–24:** launch-candidate freeze, production smoke/E2E, billing/tax/legal checklist, rollback verification, analytics/funnel verification, support/contact readiness, go/no-go review.
+- **Sep 25:** **TARGET PRODUCTION LIVE DATE**, including live paid checkout only if every mandatory legal, company, tax, pricing, Stripe, security and production gate is green. If a mandatory gate remains red, do not bypass it; move the release date.
+- **Sep 26–29:** target first paying customer through founder-led real-document problem solving and direct outreach.
+- **Sep 30 onward:** optimize from real customer evidence; target first 10 paying customers before material paid acquisition scaling.
+
+## Team execution rules
+- Routine implementation decisions are autonomous; do not wait for Founder for non-material decisions.
+- No live payment activation around legal/company/tax gates.
+- No speculative schema/OAuth/unrelated refactors.
+- Any material legal, ownership, tax, pricing, live-payment, or irreversible decision must be escalated with one concrete recommendation and the exact Founder approval required.
+- Every meaningful decision, completed deliverable, blocker, and cross-team dependency must be recorded in this file and issue #23.
+
 ## Next work
-1. Continue end-to-end production QA using the three PDF regression samples and bulk ZIP sample pack.
-2. Verify quota semantics explicitly for success, failure, retry, duplicate/re-download, multi-PDF ZIPs, concurrent requests, and anonymous trial reset/bypass behavior.
-3. Audit the customer-facing website copy across Product, Convert, Validate, Bulk, Pricing, Sign in, and Privacy for a consistent simple SaaS message. Keep implementation/security details out of marketing copy unless they are useful to customers.
-4. Execute the Legal/GDPR MUST-DO backlog before accepting the first paying customer; do not publish invented retention periods, controller details, processor claims, or legal guarantees.
-5. Confirm the final commercial quota/pricing decisions before enabling live payments. No Stripe/live payments yet.
-6. For every genuine failure: reproduce -> root cause -> smallest fix -> focused regression -> full CI -> normal merge -> production deploy -> retest.
-7. Do not touch Microsoft OAuth, Resend, database schema, or unrelated functionality unless proven necessary.
+1. Product/Engineering: finish production E2E regression using the three PDF samples and bulk ZIP sample pack; verify quota semantics including concurrency and anonymous trial bypass/reset.
+2. Legal/GDPR: execute the MUST-DO backlog and route required documents to lawyer/accountant review.
+3. Company/Ownership: prepare Belgian wife-owned-company decision/incorporation checklist and professional-advice questions.
+4. Pricing/Product: reconcile website copy with final Free/Pro/Business pricing, quotas, intervals, currency and upgrade/downgrade policy.
+5. Stripe: continue test-mode Checkout/webhook/subscription/portal/payment-recovery/refund/security lifecycle; keep live mode OFF.
+6. Growth: prepare first 100 prospects, founder outreach scripts, accountant proposition and funnel analytics.
+7. For every genuine engineering failure: reproduce -> root cause -> smallest fix -> focused regression -> full CI -> normal merge -> production deploy -> retest.
+8. Do not touch Microsoft OAuth, Resend, database schema, or unrelated functionality unless proven necessary.
 
 ## Process rule
-GitHub is the shared source of truth. Update this file and issue #23 after every completed task, meaningful decision, blocker, or cross-workstream dependency. Do not ask the user to relay information between agents.
+GitHub is the shared source of truth. Update this file and issue #23 after every completed task, meaningful decision, blocker, or cross-team dependency. Do not ask the user to relay information between agents.
