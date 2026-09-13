@@ -11,10 +11,10 @@ Last updated: 2026-09-13
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-13
-- **Current `main`: `94f596faab4e6ec5c5a1b3737c24a5dce8e63b1c`** (`docs: sync project state to current main checkpoint`).
-- This is documentation/checkpoint work, not a new product implementation.
-- **Vercel status for exact `94f596f`: SUCCESS** (`Deployment has completed`, 2026-09-13 12:26:15Z). This is deployment evidence for the exact commit, not proof of full production QA readiness.
-- GitHub Actions workflow runs for exact `94f596f` are **none**; no fresh CI pass is claimed for this docs-only commit.
+- **Current `main`: `07228f52f4571c6d0bdb4ce099210b82c262b157`** (`docs: sync project state to verified current main deployment`).
+- This is documentation/state synchronization, not a new product implementation.
+- **Vercel status for exact `07228f5`: SUCCESS** (`Deployment has completed`, 2026-09-13 13:51:56Z). This is deployment evidence for the exact commit, not proof of full production QA readiness.
+- GitHub Actions workflow runs for exact `07228f5` are **none**; no fresh CI pass is claimed for this docs-only commit.
 - Latest substantive CI evidence remains **run #85 — SUCCESS** for PR #20 branch commit `127bc6d…` from 2026-09-11.
 
 ## Stripe checkpoint — 2026-09-13
