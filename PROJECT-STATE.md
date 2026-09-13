@@ -21,11 +21,12 @@ Last updated: 2026-09-13
 - **Legal/GDPR launch audit completed 2026-09-12.** A concrete Belgium/EU first-paying-customer legal launch checklist was completed and posted to Issue #23, covering GDPR/privacy, Terms, cookies/analytics, document retention, processors/subprocessors, DPA/international transfers, deletion/export, conversion/validation liability, Peppol positioning, Belgian 2026 e-invoicing, B2B/B2C and VAT boundaries, website disclosures, and lawyer/accountant gates.
 
 ## Current production
-- Latest main commit: `144f0f023858f9d4a8f10faab9e36b8fea8f0c60` (`docs: sync production state with current main`, 2026-09-13 01:20:23Z).
-- GitHub combined status for `144f0f023858f9d4a8f10faab9e36b8fea8f0c60` reports Vercel `success` / `Deployment has completed`.
-- No GitHub Actions workflow run is attached to `144f0f0...`; do not infer fresh CI success from the Vercel status.
+- Latest main commit: `6e91ac509fe13ec95e6fdb0c68e061820e5e68f8` (`docs: sync project state with current main commit`, 2026-09-13 05:54:08Z).
+- GitHub combined status for `6e91ac5...` reports Vercel `success`.
+- No GitHub Actions workflow run is attached to `6e91ac5...`; do not infer fresh CI success from the Vercel status.
 - Canonical URL: `https://peppol-suite.vercel.app`
-- The preceding verified deployment evidence was for `366a58d34e4fe09189568c8eef390c3b44606fcf`; do not claim the current `144f0f0...` deployment is production READY without direct deployment evidence beyond the GitHub Vercel status.
+- This commit is a documentation-only state synchronization; it does not itself establish a new implementation deployment or production readiness beyond the recorded Vercel status.
+- Previous verified deployment evidence was for `366a58d34e4fe09189568c8eef390c3b44606fcf`; do not claim the current `6e91ac5...` deployment is production READY without direct deployment evidence beyond the GitHub Vercel status.
 - Production runtime error query previously recorded no error/fatal entries in the last two-hour window; treat that as historical evidence, not a current guarantee.
 
 ## Current QA findings
