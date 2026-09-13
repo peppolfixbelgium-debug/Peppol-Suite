@@ -21,13 +21,12 @@ Last updated: 2026-09-13
 - **Legal/GDPR launch audit completed 2026-09-12.** A concrete Belgium/EU first-paying-customer legal launch checklist was completed and posted to Issue #23, covering GDPR/privacy, Terms, cookies/analytics, document retention, processors/subprocessors, DPA/international transfers, deletion/export, conversion/validation liability, Peppol positioning, Belgian 2026 e-invoicing, B2B/B2C and VAT boundaries, website disclosures, and lawyer/accountant gates.
 
 ## Current production
-- Latest production deployment: `dpl_DPnu6g5WRip2Lrgopwv9vkLVhj8J`
-- Main commit: `7e23fa9ac493dec9e3f054dc257411af455a1e7e`
-- State: READY
+- Latest verified main commit before this state-sync commit: `366a58d34e4fe09189568c8eef390c3b44606fcf`.
+- Vercel GitHub status for `366a58d34e4fe09189568c8eef390c3b44606fcf` reports `success` with description `Deployment has completed` (2026-09-12 22:12:04Z).
 - Canonical URL: `https://peppol-suite.vercel.app`
-- The latest production deployment contains the PR #18, #19, and #20 changes plus the shared-state documentation commit.
-- Latest production build completed successfully; Vercel build log contains only the existing large-chunk warning, not a build failure.
-- Production runtime error log query for the last two hours returned no error/fatal entries at the last recorded check.
+- The verified deployment contains the PR #18, #19, and #20 changes plus cross-team launch/ownership documentation.
+- Do not infer a fresh CI workflow run for the documentation-only commits; the latest independently evidenced GitHub Actions CI run remains #85 on the PR #20 branch and passed.
+- Production runtime error query previously recorded no error/fatal entries in the last two-hour window; treat that as historical evidence, not a current guarantee.
 
 ## Current QA findings
 - Google OAuth: real-browser PASS; do not modify OAuth behavior.
@@ -38,7 +37,7 @@ Last updated: 2026-09-13
 - Current seeded Free plan remains 5 monthly conversions; final commercial limits/pricing are not approved yet.
 - Bulk is currently Pro-only; one bulk job consumes one bulk allowance, while each successfully persisted PDF consumes one conversion allowance.
 - Conversion history stores metadata, not PDF/XML files.
-- Production currently shows no Vercel error/fatal runtime entries in the last recorded two-hour check.
+- No newer implementation commit has been evidenced after `366a58d...`; the remaining engineering QA is still outstanding.
 
 ## Legal/GDPR launch status — 2026-09-12
 **Status: RED / launch blocker for first paying customer.** Core architecture is workable, but legal implementation and sign-off are not complete.
