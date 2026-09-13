@@ -103,9 +103,33 @@ Last updated: 2026-09-13
 - R&D must not delay production QA, legal completion, company setup, pricing, Stripe test-mode work or Growth.
 
 ## Stripe — current status
-- Test-mode architecture is defined in Issue #24: Stripe as billing system of record, local entitlement projection, backend-only Checkout, verified/idempotent webhooks, Customer Portal, lifecycle/recovery/refund handling, tax/VAT support after company configuration.
-- Live Stripe remains OFF.
-- Test-mode implementation can proceed without waiting for live entity/bank/VAT details, while final live activation remains gated by company, legal, tax/accounting, pricing, security and production readiness.
+- **GREEN (architecture/specification):** Stripe is designated as payment/billing system of record; Peppol Suite will maintain a local subscription/entitlement projection. Free will not create a Stripe subscription; paid plans will use Stripe Checkout + Billing; Customer Portal will handle billing self-service; verified webhooks, not browser redirects, will control paid access.
+- **GREEN (dependency audit):** Existing schema already contains `plans`, `users.plan_id`, `subscriptions`, and `usage_quota`. Existing subscription schema is Stripe-provider-compatible but is not yet sufficient for full launch-grade webhook/event/audit/organization billing. Existing quota semantics must not regress.
+- **AMBER (implementation):** Full Stripe test-mode integration, webhook processor, entitlement projection, billing-event persistence, portal endpoint, lifecycle handling, and tests are still to be implemented and verified.
+- **RED / blocked by CEO decisions (live activation only):** company/legal ownership entity, bank/settlement identity, VAT/tax registration/treatment, final commercial pricing/quotas, legal billing/refund/cancellation terms, and production Stripe account/live secrets.
+
+## Stripe architectural decisions
+- Products/Prices: Pro and Business monthly/yearly; environment-specific Price IDs mapped through an application-owned plan catalogue.
+- Backend-only Checkout Session creation; never trust client-supplied prices, amounts, currencies or customer IDs.
+- Webhook endpoint must verify signatures, persist events, enforce event-ID uniqueness/idempotency, and safely handle retries/out-of-order delivery.
+- Local billing projection should cover Stripe customer, subscription, events, payments/invoices/refunds as needed, entitlements, usage periods and billing audit history.
+- B2B-ready organization/workspace ownership is preferred over billing directly to one login, but must be reconciled with the current user-centric schema before migration.
+- Upgrades may be immediate with Stripe prorations; downgrades/cancellations normally take effect at period end.
+- Failed payments enter recovery/grace states; no destructive data deletion on first failure. Final grace period is a business decision.
+- Refunds are backend/admin-only and auditable.
+- Stripe Tax/VAT-ID handling waits for finalized company/VAT configuration.
+- SCA/3DS/payment-action-required states must be supported.
+
+## Stripe implementation allowed now
+- Test-mode SDK/service boundary, plan mapping, Checkout, webhook verification/idempotency, subscription state projection, entitlements, portal, upgrade/downgrade/cancel/reactivation, payment-failure handling, refund/audit plumbing and automated security/lifecycle tests.
+- Existing `plans`/`users.plan_id`/`subscriptions`/`usage_quota` must be audited and extended minimally rather than replaced speculatively.
+
+## Stripe launch blockers
+1. Company/legal ownership structure not finalized.
+2. Belgian/Indian VAT/tax registration and treatment not finalized.
+3. Final Free/Pro/Business prices, quotas, currency and intervals not approved.
+4. Terms/refund/cancellation/privacy/billing disclosures and accounting workflow not finalized.
+5. Production Stripe entity, bank/settlement verification, live keys/signing secret and live Price IDs cannot be configured until the above are resolved.
 
 ## Growth — current status
 - Priority remains founder-led acquisition toward the first 10 paying customers, with accountants/bookkeepers as a high-value distribution hypothesis.
