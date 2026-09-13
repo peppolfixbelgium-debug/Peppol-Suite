@@ -24,12 +24,12 @@ Last updated: 2026-09-13
 - R&D/Product Intelligence workstream created in Issue #25. Initial current-market scan completed 2026-09-13 against current/primary product and Belgian government sources. The evidence supports a focused document-problem/workflow position rather than a generic accounting-suite strategy.
 
 ## Current production / repository state — 2026-09-13
-- Current `main`: `16f192311934736893da962a9924132b73034c94` (`docs: sync PROJECT-STATE with current main commit`, 2026-09-13 07:05:05Z).
-- Parent was `6e91ac509fe13ec95e6fdb0c68e061820e5e68f8`; the intervening commits are documentation/state synchronizations, not new product implementation.
-- GitHub combined status for the current main commit reports Vercel `success` in the latest verified state.
+- Current `main`: `0a28b18dcb3c6d7fbb5b34e474989ed837788d1c` (`docs: refresh project state for CEO checkpoint`, 2026-09-13 09:58:06Z).
+- Parent was `16f192311934736893da962a9924132b73034c94`; the intervening commits are documentation/state synchronizations, not new product implementation.
+- GitHub Vercel status for the exact current main commit reports `success` with description `Deployment has completed` at 2026-09-13 09:58:28Z.
 - No GitHub Actions workflow run is attached to the current docs-only commit; do not infer fresh CI success from Vercel status.
 - Canonical URL: `https://peppol-suite.vercel.app`
-- Current docs-only main does not independently establish a new production deployment or production READY state. The latest independently verified deployment evidence remains historical and must not be copied forward without exact deployment evidence.
+- This exact Vercel status establishes deployment completion for `0a28b18…`, but does not by itself establish full production QA/READY. Remaining E2E and launch gates still apply.
 - Previous runtime-error evidence was a historical two-hour query with no error/fatal entries; it is not a current guarantee.
 
 ## Current QA findings
