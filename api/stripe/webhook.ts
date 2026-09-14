@@ -1,6 +1,4 @@
-import { Readable } from "node:stream";
 import { getDb, requireEnv } from "../_lib/db.js";
-import { securityEvent } from "../_lib/auth.js";
 import { verifyStripeSignature } from "../_lib/stripe.js";
 
 type StripeRequest = {
@@ -43,6 +41,11 @@ function planForEvent(event: Record<string, unknown>): "paid" | "business" | nul
 function subscriptionStatus(value: unknown): "trialing" | "active" | "past_due" | "canceled" | "incomplete" {
   if (value === "trialing" || value === "active" || value === "past_due" || value === "canceled" || value === "incomplete") return value;
   return "incomplete";
+}
+
+function timestampExpression(value: unknown): number | null {
+  const seconds = Number(value);
+  return Number.isInteger(seconds) && seconds > 0 ? seconds : null;
 }
 
 export async function handleStripeWebhook(request: Request): Promise<Response> {
@@ -97,9 +100,11 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     const resolvedUserId = userId || existing[0]?.user_id || "";
     const resolvedPlan = plan ?? existing[0]?.plan_id ?? null;
     if (resolvedUserId && subscriptionId && resolvedPlan) {
+      const periodStart = timestampExpression(object.current_period_start);
+      const periodEnd = timestampExpression(object.current_period_end);
       await sql`
-        INSERT INTO subscriptions (user_id,plan_id,provider,provider_subscription_id,stripe_customer_id,status,current_period_start,current_period_end,cancel_at_period_end,stripe_price_id)
-        VALUES (${resolvedUserId},${resolvedPlan},'stripe',${subscriptionId},${customerId},${status},to_timestamp(${Number(object.current_period_start ?? 0)}),to_timestamp(${Number(object.current_period_end ?? 0)}),${Boolean(object.cancel_at_period_end)},${typeof object.items === "object" ? null : null})
+        INSERT INTO subscriptions (user_id,plan_id,provider,provider_subscription_id,stripe_customer_id,status,current_period_start,current_period_end,cancel_at_period_end)
+        VALUES (${resolvedUserId},${resolvedPlan},'stripe',${subscriptionId},${customerId},${status},${periodStart ? new Date(periodStart * 1000).toISOString() : null},${periodEnd ? new Date(periodEnd * 1000).toISOString() : null},${Boolean(object.cancel_at_period_end)})
         ON CONFLICT (provider,provider_subscription_id) DO UPDATE SET
           plan_id=EXCLUDED.plan_id, stripe_customer_id=COALESCE(EXCLUDED.stripe_customer_id,subscriptions.stripe_customer_id), status=EXCLUDED.status,
           current_period_start=EXCLUDED.current_period_start, current_period_end=EXCLUDED.current_period_end,
