@@ -18,7 +18,8 @@
     "test:bulk-history": "vite build --ssr scripts/bulk-history-regression.ts --outDir .bulk-history-dist && node .bulk-history-dist/bulk-history-regression.js",
     "test:freemium-product": "vite build --ssr scripts/freemium-product-regression.ts --outDir .freemium-product-dist && node .freemium-product-dist/freemium-product-regression.js",
     "test:quota": "vite build --ssr scripts/quota-regression.ts --outDir .quota-dist && node .quota-dist/quota-regression.js",
-    "test:auth-regression": "vite build --ssr scripts/auth-regression.ts --outDir .auth-regression-dist && node .auth-regression-dist/auth-regression.js"
+    "test:auth-regression": "vite build --ssr scripts/auth-regression.ts --outDir .auth-regression-dist && node .auth-regression-dist/auth-regression.js",
+    "test:stripe-test-mode": "vite build --ssr scripts/stripe-test-mode-regression.ts --outDir .stripe-regression-dist && node .stripe-regression-dist/stripe-test-mode-regression.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
