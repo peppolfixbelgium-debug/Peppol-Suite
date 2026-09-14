@@ -13,10 +13,12 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `5480097f0721587b8391b1977769622032928f26`**, merge of PR #44 (Stripe test-mode rebase onto current pricing main).
-- PR #44 passed current-main CI #108 before merge and was merged without activating live Stripe.
-- Post-merge Vercel status for `5480097f…` is successful. Post-merge main CI remains a verification gate; do not claim full GREEN until its run completes successfully.
-- Stale duplicate Stripe PR #31 is closed without merge.
+- **Current `main`: `9842cd4a8aa1d019ae5bc6df422faccb128245a8`**, parser edge-case regression coverage.
+- Prior converter UX hardening and CI compatibility fixes are on main; current CI #126 is running on the exact checkpoint.
+- CI #125 exposed a formatting-sensitive freemium regression assertion; fixed in `4a078683a0bb78b1172e6dcf56f41f2c3a32d47e` by making the test resilient to source formatting rather than changing product behavior.
+- Parser hardening is on `75a6a37c113f8967d57497c102914a95280a819a`: invoice-number extraction no longer treats bare `Invoice` as the value source, and amount extraction accepts integer EUR values.
+- Regression coverage for these parser cases is on `9842cd4a8aa1d019ae5bc6df422faccb128245a8`.
+- Do not claim full CI/production GREEN until the current run and deployment are independently verified.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -24,11 +26,20 @@ Last updated: 2026-09-15
 - Claims/legal-surface consistency is a mandatory quality gate: implementation ↔ production behavior ↔ product copy ↔ Terms ↔ Privacy ↔ Security.
 
 ## Product / Engineering / Production QA
-- **AMBER:** core auth/conversion/bulk/freemium foundation remains supported by merged PRs #18/#19/#20 and quota-concurrency regression work in #40.
+- **AMBER:** core auth/conversion/bulk/freemium foundation remains supported by merged PRs #18/#19/#20 and quota-concurrency regression work.
 - OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced.
+- Converter now explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
+- PDF extraction limits remain 20 MB / 50 pages; scanned PDFs without extractable text are rejected with an explicit message rather than being treated as empty invoice data.
+- Parser regression coverage now includes invoice-date-before-number and integer amount extraction.
 - **P0 evidence gap:** production 3-PDF + bulk-ZIP real-browser E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
-- Issues #34/#36 explicitly document environment limitations: no repository PDF/ZIP samples and no connector capability to perform the complete authenticated browser upload flow. Do not fabricate PASS from API-only checks.
+- Issues #34/#36 explicitly document environment limitations: the available connector cannot perform the complete authenticated browser upload flow with the user's local PDF/ZIP and browser session. Do not fabricate PASS from API-only checks.
 - No full production READY claim until these are independently evidenced.
+
+## Production entitlements
+- Founder explicitly approved the live entitlement migration.
+- Migration `159993ec-df65-4615-ba96-3ec32046825d` was applied to production Neon branch `br-young-heart-b1j6ptrm` and read-back verified.
+- Verified: Free = 5 document / 0 bulk / API false; Pro (legacy `paid`) = 100 document / 500 bulk / API false; Business = 1,000 document / 10,000 bulk / API true.
+- Issue #35 is closed as completed after production verification.
 
 ## Legal / GDPR
 - **RED:** launch blocker.
@@ -66,7 +77,7 @@ Last updated: 2026-09-15
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Verify post-merge main CI and production deployment for `5480097f…`.
+1. Finish CI verification on `9842cd4a8aa1d019ae5bc6df422faccb128245a8` and independently verify its production deployment.
 2. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification using independently available evidence; obtain/execute real-browser sample pack when environment permits.
 3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
 4. Pricing/Product: verify production pricing against Founder-approved baseline.
