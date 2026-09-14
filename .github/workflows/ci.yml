@@ -34,6 +34,7 @@ jobs:
         with:
           node-version: 24.x
       - run: npm install --no-audit --no-fund
+      - run: npm install --no-save --no-audit --no-fund eslint-plugin-react-hooks@7.1.1 eslint-plugin-react-refresh@0.4.24
       - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_auth_database.sql
       - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_stripe_billing.sql
       - run: npm run typecheck
