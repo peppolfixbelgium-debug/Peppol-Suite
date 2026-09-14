@@ -66,6 +66,9 @@ export async function createCheckoutSession(input: {
   body.set("metadata[user_id]", input.userId);
   body.set("metadata[plan]", input.plan);
   body.set("metadata[interval]", input.interval);
+  body.set("subscription_data[metadata][user_id]", input.userId);
+  body.set("subscription_data[metadata][plan]", input.plan);
+  body.set("subscription_data[metadata][interval]", input.interval);
   const session = await stripeRequest("/checkout/sessions", body);
   if (typeof session.id !== "string" || typeof session.url !== "string") throw new Error("Stripe did not return a Checkout Session URL.");
   return { id: session.id, url: session.url };
