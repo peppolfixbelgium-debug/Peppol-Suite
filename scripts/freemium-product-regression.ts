@@ -8,6 +8,7 @@ const conversionApi = readFileSync("api/conversions.ts", "utf8");
 const usageApi = readFileSync("api/usage.ts", "utf8");
 const pricingSource = readFileSync("src/lib/peppol/pricing.ts", "utf8");
 const privacySource = readFileSync("src/routes/privacy.tsx", "utf8");
+const entitlementMigration = readFileSync("migrations/003_align_plan_entitlements.sql", "utf8");
 
 assert.match(quotaSource, /ANONYMOUS_TRIAL_LIMIT = 3/, "Anonymous trial target must be explicit and local-only");
 assert.match(quotaSource, /localStorage/, "Anonymous quota must remain a soft browser-local mechanism");
@@ -32,6 +33,9 @@ assert.match(pricingSource, /id: \"free\"/, "Free tier must remain present");
 assert.match(pricingSource, /id: \"pro\"/, "Pro tier must be represented by the actual product tier");
 assert.match(pricingSource, /id: \"business\"/, "Business tier must be represented by the actual product tier");
 assert.doesNotMatch(pricingSource, /price: (19|49|99)/, "Unfinalized paid prices must not be published");
+assert.match(entitlementMigration, /WHERE id = 'free'[\s\S]*monthly_bulk_limit = 0/, "Free must have no bulk allowance");
+assert.match(entitlementMigration, /WHERE id = 'paid'[\s\S]*monthly_conversion_limit = 100[\s\S]*monthly_bulk_limit = 500/, "Legacy paid plan must match approved Pro entitlements");
+assert.match(entitlementMigration, /WHERE id = 'business'[\s\S]*monthly_conversion_limit = 1000[\s\S]*monthly_bulk_limit = 10000/, "Business entitlements must match approved pricing");
 assert.match(privacySource, /Google or with email and password/, "Privacy page must describe current authentication accurately");
 assert.match(privacySource, /Microsoft and itsme/, "Future sign-in providers must be clearly described as planned");
 assert.match(privacySource, /browser.*PDF|PDF.*browser/i, "Privacy page must describe browser-side PDF processing");
