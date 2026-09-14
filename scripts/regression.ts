@@ -76,6 +76,11 @@ const dateBeforeInvoice = extractInvoice(`Invoice date: 15/08/2026\nSupplier BV\
 assert.equal(dateBeforeInvoice.invoiceNumber.value, "REAL-2026-009");
 assert.equal(dateBeforeInvoice.issueDate.value, "2026-08-15");
 
+const splitLabels = extractInvoice(`INVOICE\nINV-2026-011\nInvoice date\n15/09/2026\nSupplier BV\nBuyer SRL\nVAT BE 1234.567.894\nVAT BE 9876.543.265\nTotal due 121 EUR\nPurchase order\nPO-2026-011`);
+assert.equal(splitLabels.invoiceNumber.value, "INV-2026-011");
+assert.equal(splitLabels.issueDate.value, "2026-09-15");
+assert.equal(splitLabels.orderReference.value, "PO-2026-011");
+
 const integerAmounts = extractInvoice(`Invoice #INT-2026-010\nSubtotal excl VAT: 1000 EUR\nVAT 21%: 210 EUR\nTotal due: 1210 EUR`);
 assert.equal(integerAmounts.netAmount.value, "1000.00");
 assert.equal(integerAmounts.vatAmount.value, "210.00");
