@@ -9,6 +9,10 @@ export type PdfProgress = {
   total: number;
 };
 
+function isPdfFile(file: File): boolean {
+  return file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+}
+
 async function loadPdfjs() {
   const pdfjs = await import("pdfjs-dist");
   pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
@@ -19,6 +23,32 @@ export async function extractPdfText(
   file: File,
   onProgress?: (p: PdfProgress) => void,
 ): Promise<PdfExtractionResult> {
+  if (!isPdfFile(file)) {
+    return {
+      success: false,
+      fullText: "",
+      pages: [],
+      pageCount: 0,
+      error: {
+        code: "NOT_PDF",
+        userMessage: "This file is not a PDF invoice. Choose a .pdf file.",
+      },
+    };
+  }
+
+  if (file.size === 0) {
+    return {
+      success: false,
+      fullText: "",
+      pages: [],
+      pageCount: 0,
+      error: {
+        code: "EMPTY_FILE",
+        userMessage: "This PDF file is empty. Choose a real invoice PDF.",
+      },
+    };
+  }
+
   if (file.size > MAX_BYTES) {
     return {
       success: false,
@@ -46,9 +76,6 @@ export async function extractPdfText(
       onProgress?.({ stage: "page", page: i, total: limit });
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      // pdf.js returns positioned text fragments rather than semantic lines.
-      // Preserve the visual line structure so invoice extraction can distinguish
-      // labels, totals and line items instead of receiving one giant paragraph.
       const positioned = content.items
         .filter((item): item is typeof item & { str: string; transform: number[] } =>
           "str" in item && typeof item.str === "string" && Array.isArray(item.transform),
@@ -92,7 +119,7 @@ export async function extractPdfText(
         error: {
           code: "NO_TEXT",
           userMessage:
-            "This PDF has no extractable text. Scanned invoices need OCR, which we do not run in your browser. Export a text-based PDF from your accounting tool, or fill the fields by hand.",
+            "This PDF has no extractable text. Scanned invoices need OCR, which we do not run in your browser. Export a text-based PDF from your accounting tool.",
         },
       };
     }
