@@ -9,6 +9,7 @@ import { extractInvoice } from "@/lib/peppol/extract";
 import { t } from "@/lib/peppol/i18n";
 import { extractPdfText, renderPdfPage, type PdfProgress } from "@/lib/peppol/pdf";
 import { consumeAnonymousQuota, fetchQuota, getAnonymousQuota, type QuotaState } from "@/lib/peppol/quota";
+import { usePrefs } from "@/lib/peppol/prefs";
 import { SAMPLE_INVOICE_TEXT } from "@/lib/peppol/sample";
 import { EMPTY_INVOICE, type InvoiceData } from "@/lib/peppol/types";
 import { validateInvoice } from "@/lib/peppol/validate";
