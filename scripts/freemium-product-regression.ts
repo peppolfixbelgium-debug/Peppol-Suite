@@ -13,7 +13,7 @@ const entitlementMigration = readFileSync("migrations/003_align_plan_entitlement
 assert.match(quotaSource, /ANONYMOUS_TRIAL_LIMIT = 3/, "Anonymous trial target must be explicit and local-only");
 assert.match(quotaSource, /localStorage/, "Anonymous quota must remain a soft browser-local mechanism");
 assert.match(converterSource, /consumeAnonymousQuota\(\)/, "Anonymous successful downloads must consume the local trial quota");
-assert.match(converterSource, /saveConversion\([^\n]+issue_count:result\.issues\.length/, "Authenticated conversion history must persist the actual validation issue count");
+assert.match(converterSource, /saveConversion\([\s\S]*?issue_count:\s*result\.issues\.length/, "Authenticated conversion history must persist the actual validation issue count");
 assert.match(converterSource, /if\(conversionSaved\)/, "Repeated downloads must not create duplicate conversion records");
 assert.match(conversionApi, /WITH quota AS/, "Server conversion quota and history must be committed atomically in one SQL statement");
 assert.match(conversionApi, /input\.kind !== \"conversion\"/, "Conversion API must accept only the single-conversion entitlement path");
