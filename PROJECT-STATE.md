@@ -1,6 +1,6 @@
 # Peppol Suite — Project State
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15
 
 ## Source of truth
 - GitHub repository: `peppolfixbelgium-debug/Peppol-Suite`
@@ -9,15 +9,14 @@ Last updated: 2026-09-14
 - R&D / Product Intelligence issue: #25
 - Stripe workstream issue: #24
 - Growth / Customer Evidence issue: #26
-- Active pricing verification: PR #43
 - Production platform: Vercel + Neon PostgreSQL
 - Do not expose credentials or secrets.
 
-## Current repository checkpoint — 2026-09-14 21:22 CEST
-- **Current `main`: `2126d82563fe53018161361429f8ec48c21294e6`**, merge of PR #41 (`ci: validate main branch on every push`).
-- PR #41 was independently validated: GitHub Actions `validate` completed successfully on commit `43fa4b19…` before merge. Vercel preview check also passed.
-- Main-branch CI verification is now enabled by the merged workflow change. A fresh CI run is queued for active pricing PR #43 on its current head `e87ce25…`.
-- Stale duplicate CI/pricing PRs #30, #27 and #32 have been closed; the active paths are now #43 for pricing and #31 for Stripe test-mode.
+## Current repository checkpoint — 2026-09-15
+- **Current `main`: `5480097f0721587b8391b1977769622032928f26`**, merge of PR #44 (Stripe test-mode rebase onto current pricing main).
+- PR #44 passed current-main CI #108 before merge and was merged without activating live Stripe.
+- Post-merge Vercel status for `5480097f…` is successful. Post-merge main CI remains a verification gate; do not claim full GREEN until its run completes successfully.
+- Stale duplicate Stripe PR #31 is closed without merge.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -25,9 +24,10 @@ Last updated: 2026-09-14
 - Claims/legal-surface consistency is a mandatory quality gate: implementation ↔ production behavior ↔ product copy ↔ Terms ↔ Privacy ↔ Security.
 
 ## Product / Engineering / Production QA
-- **AMBER:** core auth/conversion/bulk/freemium foundation remains supported by merged PRs #18/#19/#20 and quota-concurrency regression work merged in #40.
+- **AMBER:** core auth/conversion/bulk/freemium foundation remains supported by merged PRs #18/#19/#20 and quota-concurrency regression work in #40.
 - OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced.
-- Remaining P0 verification: production 3-PDF + bulk-ZIP E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
+- **P0 evidence gap:** production 3-PDF + bulk-ZIP real-browser E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
+- Issues #34/#36 explicitly document environment limitations: no repository PDF/ZIP samples and no connector capability to perform the complete authenticated browser upload flow. Do not fabricate PASS from API-only checks.
 - No full production READY claim until these are independently evidenced.
 
 ## Legal / GDPR
@@ -47,11 +47,11 @@ Last updated: 2026-09-14
 - Free: 5 document units/month.
 - Pro: €14.90/month or €149/year; 100 document units + 500 bulk document units.
 - Business: €44.90/month or €449/year; 1,000 document units + 10,000 bulk units.
-- **PR #43 OPEN:** current-main pricing implementation. CI is required before merge; no production pricing GREEN claim yet.
+- Pricing implementation was merged in PR #43 at `9d5d477…`; production pricing still requires independent production verification.
 
 ## Stripe
-- **GREEN:** architecture/specification and existing-schema dependency audit.
-- **AMBER:** PR #31 contains test-mode Checkout/Portal/webhook lifecycle implementation; its prior CI evidence passed on the older main base and it still requires current-base integration/reverification.
+- **AMBER / test-mode integrated:** PR #44 merged current-main Stripe Checkout/Portal/webhook test-mode implementation at `5480097f…`.
+- Current implementation includes server-side price mapping, authenticated same-origin Checkout, test-key enforcement, signed webhook verification, live-event rejection, event-id idempotency, and billing persistence.
 - **RED/OFF:** live activation intentionally blocked pending company/legal/tax/accounting/pricing gates and explicit go-live approval.
 - No live Stripe activation or live payment claim is permitted.
 
@@ -66,12 +66,12 @@ Last updated: 2026-09-14
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification.
-2. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
-3. Pricing/Product: verify and merge PR #43, then verify production pricing.
-4. Growth: continue prospect qualification and discovery; seek strongest willingness-to-pay evidence.
-5. Company: obtain professional confirmation of ownership/operator eligibility and tax/VAT/employment/IP boundaries.
-6. Stripe: rebase/reverify PR #31 against current main; keep live OFF.
+1. Verify post-merge main CI and production deployment for `5480097f…`.
+2. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification using independently available evidence; obtain/execute real-browser sample pack when environment permits.
+3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
+4. Pricing/Product: verify production pricing against Founder-approved baseline.
+5. Growth: continue prospect qualification and discovery; seek strongest willingness-to-pay evidence without live outbound until approved.
+6. Company: obtain professional confirmation of ownership/operator eligibility and tax/VAT/employment/IP boundaries.
 7. First payment only after the launch gate is GREEN and required Founder/legal/company/tax approvals are obtained.
 
 ## Founder approvals / escalation gates
