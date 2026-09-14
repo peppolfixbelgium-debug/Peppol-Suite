@@ -34,7 +34,7 @@ function looksLikeInvoice(text: string): boolean {
     total: /\b(total|totaal|montant)\b/.test(normalized),
     party: /\b(supplier|seller|leverancier|fournisseur|customer|buyer|klant|client|bill to)\b/.test(normalized),
     currency: /\b(iban|eur|€)\b/.test(normalized),
-    invoiceId: /\b(?:invoice|factuur|facture)\s*(?:number|no\.?|#|n[°oº]|num[eé]ro)?\s*[:#./-]?\s*[A-Z0-9][A-Z0-9/_-]{2,}\b/i.test(text),
+    invoiceId: /\b(?:invoice|factuur|facture)\s*(?:number|no\.?|#|n[°oº]|num[eé]ro)\s*[:#./-]?\s*[A-Z0-9][A-Z0-9/_-]{2,}\b/i.test(text) || /\bINV[-/]\d{2,4}[-/]?\d{2,}\b/i.test(text),
     date: /\b(?:invoice\s*date|factuurdatum|issue\s*date|date\s*(?:de\s*)?facture)\s*[:.]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/i.test(text),
   };
   const strongIdentity = markers.invoiceId || markers.date;
