@@ -62,8 +62,11 @@ Last updated: 2026-09-14
 - Next commercial proof: expand to 20 qualified prospects, capture pain hypothesis/contact/source, prepare personalized discovery outreach, then obtain Founder approval before first live outbound.
 
 ## R&D / Product Intelligence
-- **GREEN for initial market scan.** Belgian market is crowded with generic e-invoicing/accounting/Peppol products; current evidence favors the focused document-problem wedge: validate → understand/explain → fix/convert → revalidate → export/history → bulk → accountant workflow.
-- Do not build a generic accounting suite, full Access Point or broad integrations before first-customer evidence.
+- **GREEN for initial market scan and feature-gap decision set — 2026-09-14.** Current research confirms the generic Peppol sending/accounting market is crowded and that free validation itself is increasingly commoditized. The strongest defensible launch hypothesis remains a focused document-problem workflow: validate → inspect/understand → explain errors → fix/convert → revalidate → export/history → bulk → accountant workflow.
+- Completed R&D matrix decision set: P0 = existing reliability/launch gates only; P1 = guided validation troubleshooting and accountant multi-document workflow/reporting, but only after customer evidence/effort check; P2 = API/integrations/deeper workflow automation after evidence; PARK = generic accounting, banking, CRM, tax filing and full Access Point/sending-receiving stack before first-customer evidence.
+- Current competitor evidence reviewed 2026-09-14: Peppolio combines validation, plain-language reports, batch processing and conversion; Peppol Validator offers free no-signup batch validation and shareable results; UBLExplain focuses browser-local validation/error explanation/viewer/checkers; InvoiceValidator.eu combines rule explanations, ZIP validation and auto-fix; e-invoice.be offers PDF→UBL conversion, validation and Peppol API/delivery. These establish that basic validation, batch validation, explanation and conversion are no longer sufficient as standalone differentiation.
+- R&D therefore recommends prioritizing workflow depth and trust: actionable fix guidance tied to exact validation findings, safe revalidation, transparent processing/privacy behavior, useful history/export, and accountant-oriented repeat workflows. No engineering implementation is requested from R&D solely from competitor parity.
+- Customer-validation requirement remains open: test whether Belgian accountants/bookkeepers/SMEs will pay for reducing document rejection/troubleshooting time before adding P1 scope.
 
 ## Highest-value path to first paying customer
 1. Engineering/DQM: close production E2E and quota/anonymous-trial verification.
