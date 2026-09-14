@@ -8,7 +8,6 @@ import { saveConversion } from "@/lib/peppol/conversions";
 import { extractInvoice } from "@/lib/peppol/extract";
 import { t } from "@/lib/peppol/i18n";
 import { extractPdfText, renderPdfPage, type PdfProgress } from "@/lib/peppol/pdf";
-import { usePrefs } from "@/lib/peppol/prefs";
 import { consumeAnonymousQuota, fetchQuota, getAnonymousQuota, type QuotaState } from "@/lib/peppol/quota";
 import { SAMPLE_INVOICE_TEXT } from "@/lib/peppol/sample";
 import { EMPTY_INVOICE, type InvoiceData } from "@/lib/peppol/types";
@@ -29,14 +28,18 @@ export const Route = createFileRoute("/converter")({
 
 function looksLikeInvoice(text: string): boolean {
   const normalized = text.toLowerCase();
-  const markers = [
-    /\b(invoice|factuur|facture)\b/.test(normalized),
-    /\b(vat|btw|tva)\b/.test(normalized),
-    /\b(total|totaal|montant)\b/.test(normalized),
-    /\b(supplier|seller|leverancier|fournisseur|customer|buyer|klant|client|bill to)\b/.test(normalized),
-    /\b(iban|eur|€)\b/.test(normalized),
-  ];
-  return markers.filter(Boolean).length >= 2 && /\d/.test(normalized);
+  const markers = {
+    invoice: /\b(invoice|factuur|facture)\b/.test(normalized),
+    vat: /\b(vat|btw|tva)\b/.test(normalized),
+    total: /\b(total|totaal|montant)\b/.test(normalized),
+    party: /\b(supplier|seller|leverancier|fournisseur|customer|buyer|klant|client|bill to)\b/.test(normalized),
+    currency: /\b(iban|eur|€)\b/.test(normalized),
+    invoiceId: /\b(?:invoice|factuur|facture)\s*(?:number|no\.?|#|n[°oº]|num[eé]ro)?\s*[:#./-]?\s*[A-Z0-9][A-Z0-9/_-]{2,}\b/i.test(text),
+    date: /\b(?:invoice\s*date|factuurdatum|issue\s*date|date\s*(?:de\s*)?facture)\s*[:.]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{4}\b/i.test(text),
+  };
+  const strongIdentity = markers.invoiceId || markers.date;
+  const supportingMarkers = [markers.vat, markers.total, markers.party, markers.currency].filter(Boolean).length;
+  return strongIdentity && markers.invoice && supportingMarkers >= 2 && /\d/.test(normalized);
 }
 
 function ConverterPage() {
@@ -99,7 +102,7 @@ function ConverterPage() {
       setFileName(null);
       setChecked(false);
       setTab("pdf");
-      setError("This PDF does not look like an invoice. Upload an invoice PDF with invoice details, VAT/tax information and totals.");
+      setError("This PDF does not contain enough invoice evidence. Upload an invoice with an invoice number or issue date plus VAT/tax and total details.");
       return;
     }
 
