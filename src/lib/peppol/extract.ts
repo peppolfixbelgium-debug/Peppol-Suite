@@ -9,6 +9,20 @@ function firstMatch(text: string, patterns: RegExp[]): { value: string; confiden
   }
   return null;
 }
+function firstAdjacentLabelValue(text: string, label: RegExp, value: RegExp): { value: string; confidence: Confidence } | null {
+  const lines = text.split(/\n/).map((line) => line.trim()).filter(Boolean);
+  for (let i = 0; i < lines.length; i += 1) {
+    if (!label.test(lines[i])) continue;
+    const sameLine = lines[i].match(value);
+    if (sameLine?.[1]) return { value: sameLine[1].trim(), confidence: "high" };
+    for (let j = i + 1; j < Math.min(i + 3, lines.length); j += 1) {
+      const next = lines[j].match(value);
+      if (next?.[1]) return { value: next[1].trim(), confidence: "high" };
+      if (/^(invoice|factuur|facture|date|issue|due|verval|referentie|reference|po|order)\b/i.test(lines[j])) break;
+    }
+  }
+  return null;
+}
 
 const INVOICE_NO_PATTERNS = [
   /\b(INV[-/]\d{2,4}[-/]?\d{2,})\b/i,
@@ -110,7 +124,9 @@ export function extractInvoice(text: string): InvoiceData {
   const clean = text.replace(/\r/g, "").replace(/\u00a0/g, " ");
   const { supplier, customer } = splitParties(clean);
   const supplierVats = collectVats(supplier); const customerVats = collectVats(customer);
-  const invNo = firstMatch(clean, INVOICE_NO_PATTERNS); const issue = firstMatch(clean, ISSUE_DATE_PATTERNS); const due = firstMatch(clean, DUE_DATE_PATTERNS);
+  const invNo = firstMatch(clean, INVOICE_NO_PATTERNS) ?? firstAdjacentLabelValue(clean, /^(?:invoice|factuur|facture)\s*(?:number|no\.?|#|n[°oº]|num[eé]ro)?\s*[:#.\-]?\s*$/i, /\b([A-Z]{2,}[A-Z0-9/_-]*\d[A-Z0-9/_-]*)\b/i);
+  const issue = firstMatch(clean, ISSUE_DATE_PATTERNS) ?? firstAdjacentLabelValue(clean, /^(?:factuurdatum|invoice\s*date|issue\s*date|date\s*(?:de\s*)?facture)\s*[:.]?$/i, /(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/);
+  const due = firstMatch(clean, DUE_DATE_PATTERNS);
   const buyerReference = firstMatch(clean, BUYER_REF_PATTERNS); const orderReference = firstMatch(clean, ORDER_REF_PATTERNS); const paymentReference = firstMatch(clean, PAYMENT_REF_PATTERNS);
   const supplierLoc = extractCity(supplier); const customerLoc = extractCity(customer);
   const net = extractAmountAfter(clean, NET_PATTERNS); const vatAmt = extractAmountAfter(clean, VAT_AMT_PATTERNS); const payable = extractAmountAfter(clean, PAY_PATTERNS); const lines = extractLines(clean);
