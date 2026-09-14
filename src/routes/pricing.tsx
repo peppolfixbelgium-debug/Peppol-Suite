@@ -13,7 +13,7 @@ function PricingPage() {
     <main className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="font-display text-4xl tracking-tight">{t(lang, "pricing_title")}</h1>
       <p className="mt-3 max-w-2xl text-muted">{t(lang, "pricing_sub")}</p>
-      <p className="mt-4 max-w-2xl text-sm text-muted">Pricing and final entitlement limits are still being finalized; no live payments are enabled.</p>
+      <p className="mt-4 max-w-2xl text-sm text-muted">Founder-approved launch pricing. Payments remain disabled until the required company, legal, tax and Stripe gates are complete.</p>
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {PRICING.tiers.map((tier) => (
           <div
@@ -24,7 +24,12 @@ function PricingPage() {
             )}
           >
             <h2 className="font-medium">{tier.name}</h2>
-            <p className="mt-3 font-display text-2xl">{tier.price === null ? "Pricing coming soon" : `€${tier.price}`}</p>
+            <div className="mt-3 font-display text-2xl">
+              {tier.id === "free" ? "Free" : `€${tier.priceMonthly.toFixed(2)}/month`}
+            </div>
+            {tier.id !== "free" && (
+              <p className="mt-1 text-sm text-muted">€{tier.priceAnnual.toFixed(2)}/year</p>
+            )}
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
               {tier.features.map((f) => (
                 <li key={f}>{f}</li>
