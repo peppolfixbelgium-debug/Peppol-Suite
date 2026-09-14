@@ -21,9 +21,11 @@ function Terms() {
         </p>
         <p>
           The anonymous trial currently allows three document units per month in the browser. Signed-in
-          accounts use server-enforced plan allowances; the current Free allowance is five document units per
-          month. Bulk processing has separate plan entitlements. Paid-plan pricing and commercial terms are
-          published only when enabled for the applicable account.
+          accounts use server-enforced plan allowances. The current Free allowance is five document units per
+          month. Pro is €14.90/month or €149/year with 100 document units and 500 bulk units. Business is
+          €44.90/month or €449/year with 1,000 document units and 10,000 bulk units. Bulk processing has
+          separate plan entitlements. Live payment processing remains disabled until the applicable launch
+          gates are satisfied.
         </p>
         <p>
           The service is provided as-is. We do not warrant that generated XML will be accepted by every
@@ -31,11 +33,11 @@ function Terms() {
           tax, accounting, or acceptance guarantee. Review the result before sending.
         </p>
         <p>
-          These terms are an operational product draft pending final company identity, commercial terms and
-          professional legal review. Belgian law is intended to apply, subject to any mandatory rights that
-          cannot lawfully be excluded or limited.
+          These terms are an operational product draft pending final company identity, commercial terms,
+          payment activation terms and professional legal review. Belgian law is intended to apply, subject to
+          any mandatory rights that cannot lawfully be excluded or limited.
         </p>
-        <p>Product draft last updated 14 September 2026.</p>
+        <p>Product draft last updated 15 September 2026.</p>
       </div>
     </main>
   );
