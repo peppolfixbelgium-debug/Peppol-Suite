@@ -72,7 +72,7 @@ export interface PdfExtractionResult {
   pages: { pageNumber: number; text: string }[];
   pageCount: number;
   error?: {
-    code: "NO_TEXT" | "PASSWORD" | "CORRUPT" | "TOO_LARGE" | "WORKER" | "UNKNOWN";
+    code: "NOT_PDF" | "EMPTY_FILE" | "NO_TEXT" | "PASSWORD" | "CORRUPT" | "TOO_LARGE" | "WORKER" | "UNKNOWN";
     userMessage: string;
   };
 }
