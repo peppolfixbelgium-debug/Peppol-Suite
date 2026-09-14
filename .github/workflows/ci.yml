@@ -33,9 +33,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24.x
-          cache: npm
-      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - run: npm ci --no-audit --no-fund
+      - run: npm install --no-audit --no-fund
       - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_auth_database.sql
       - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_stripe_billing.sql
       - run: npm run typecheck
