@@ -140,15 +140,7 @@ function ConverterPage() {
       return;
     }
     try {
-      await saveConversion(user.id, {
-        invoice_id: data.invoiceNumber.value || "untitled",
-        supplier: data.supplierName.value,
-        customer: data.customerName.value,
-        total: data.payableAmount.value,
-        currency: data.currency.value,
-        status: "ok",
-        issue_count: result.issues.length,
-      });
+      await saveConversion(user.id, { invoice_id: data.invoiceNumber.value || "untitled", supplier: data.supplierName.value, customer: data.customerName.value, total: data.payableAmount.value, currency: data.currency.value, status: "ok", issue_count: result.issues.length });
       const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
       downloadBlob(suggestedFilename(data), blob);
       setConversionSaved(true);
@@ -186,26 +178,8 @@ function ConverterPage() {
         <section className={cn("rounded-2xl border border-border bg-elevated p-4", tab !== "pdf" && "hidden lg:block")}>
           <h2 className="text-sm font-medium">{t(lang, "drop_title")}</h2>
           <p className="mt-1 text-xs text-muted">{t(lang, "drop_hint")}</p>
-          <label
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              const f = e.dataTransfer.files[0];
-              if (f) void onFile(f);
-            }}
-            className="mt-4 grid min-h-48 cursor-pointer place-items-center rounded-xl border border-dashed border-border bg-surface p-6 text-center"
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".pdf,application/pdf"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void onFile(f);
-                e.currentTarget.value = "";
-              }}
-            />
+          <label onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void onFile(f); }} className="mt-4 grid min-h-48 cursor-pointer place-items-center rounded-xl border border-dashed border-border bg-surface p-6 text-center">
+            <input ref={inputRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onFile(f); e.currentTarget.value = ""; }} />
             <Upload className="size-6 text-accent" />
             <p className="mt-2 text-sm">{t(lang, "drop_browse")}</p>
             {fileName ? <p className="mt-1 text-xs text-muted">{fileName}</p> : null}
