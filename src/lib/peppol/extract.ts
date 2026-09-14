@@ -12,7 +12,7 @@ function firstMatch(text: string, patterns: RegExp[]): { value: string; confiden
 
 const INVOICE_NO_PATTERNS = [
   /\b(INV[-/]\d{2,4}[-/]?\d{2,})\b/i,
-  /(?:factuurnummer|factuurnr\.?|invoice\s*(?:number|no\.?|#)|invoice|n[°oº]\s*(?:de\s*)?facture|num[eé]ro\s*(?:de\s*)?facture)\s*[:#.\-]?\s*([A-Z0-9][A-Z0-9/_-]{2,})/i,
+  /(?:factuurnummer|factuurnr\.?|invoice\s*(?:number|no\.?|#)|n[°oº]\s*(?:de\s*)?facture|num[eé]ro\s*(?:de\s*)?facture)\s*[:#.\-]?\s*([A-Z0-9][A-Z0-9/_-]{2,})/i,
 ];
 const ISSUE_DATE_PATTERNS = [/(?:factuurdatum|invoice\s*date|issue\s*date|date\s*(?:de\s*)?facture|(?<!verval)\bdate)\s*[:.]?\s*(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/i];
 const DUE_DATE_PATTERNS = [/(?:vervaldatum|due\s*date|date\s*[eé]ch[eé]ance|[eé]ch[eé]ance|betaaldatum|payment\s*due)\s*[:.]?\s*(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/i];
@@ -57,7 +57,7 @@ function extractCity(block: string) {
 function extractAmountAfter(text: string, patterns: RegExp[]): string {
   for (const line of text.split(/\n/)) {
     if (!patterns.some((p) => p.test(line))) continue;
-    const nums = [...line.matchAll(/(?:€|EUR|\u20ac)?\s*(-?\d+(?:[.,\s]\d{3})*[.,]\d{2}|-?\d+[.,]\d{2})/gi)];
+    const nums = [...line.matchAll(/(?:€|EUR|\u20ac)?\s*(-?\d+(?:[.,\s]\d{3})*[.,]\d{2}|-?\d+(?:[.,]\d{3})?)/gi)];
     const last = nums.at(-1)?.[1];
     if (last) {
       const parsed = parseAmount(last);
