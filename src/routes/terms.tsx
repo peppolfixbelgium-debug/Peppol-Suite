@@ -20,14 +20,22 @@ function Terms() {
           Access Point, and for meeting Belgian and EU invoicing rules (including the 2026 B2B mandate).
         </p>
         <p>
-          The free tier allows five conversions per calendar month, counted in this browser. Paid volume, if
-          enabled on your account, is described on the pricing page. We may suspend abuse.
+          The anonymous trial currently allows three document units per month in the browser. Signed-in
+          accounts use server-enforced plan allowances; the current Free allowance is five document units per
+          month. Bulk processing has separate plan entitlements. Paid-plan pricing and commercial terms are
+          published only when enabled for the applicable account.
         </p>
         <p>
           The service is provided as-is. We do not warrant that generated XML will be accepted by every
-          Access Point or tax authority. Validate before sending.
+          Access Point or tax authority. Validation performed by Peppol Suite is a product check, not a legal,
+          tax, accounting, or acceptance guarantee. Review the result before sending.
         </p>
-        <p>Belgian law applies. These terms were last updated in April 2026.</p>
+        <p>
+          These terms are an operational product draft pending final company identity, commercial terms and
+          professional legal review. Belgian law is intended to apply, subject to any mandatory rights that
+          cannot lawfully be excluded or limited.
+        </p>
+        <p>Product draft last updated 14 September 2026.</p>
       </div>
     </main>
   );
