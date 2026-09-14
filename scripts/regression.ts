@@ -63,11 +63,23 @@ assert.equal(bpost.invoiceNumber.value, "INV-2026-001");
 assert.equal(bpost.issueDate.value, "2026-08-15");
 assert.equal(bpost.lines.length, 1);
 assert.equal(bpost.lines[0].lineTotal, "100.00");
+assert.equal(bpost.netAmount.value, "100.00");
+assert.equal(bpost.vatAmount.value, "21.00");
+assert.equal(bpost.payableAmount.value, "121.00");
 assert.equal(bpost.supplierVat.value, "BE0200123456");
 assert.equal(bpost.customerVat.value, "BE0550123456");
 assert.equal(validateInvoice(bpost).ok, false);
 assert.ok(validateInvoice(bpost).issues.some((i) => i.code === "PEPPOL-COMMON-R043"));
 assert.ok(validateInvoice(bpost).issues.some((i) => i.code === "IBAN-01"));
+
+const dateBeforeInvoice = extractInvoice(`Invoice date: 15/08/2026\nSupplier BV\nInvoice #REAL-2026-009\nTotal: 121 EUR`);
+assert.equal(dateBeforeInvoice.invoiceNumber.value, "REAL-2026-009");
+assert.equal(dateBeforeInvoice.issueDate.value, "2026-08-15");
+
+const integerAmounts = extractInvoice(`Invoice #INT-2026-010\nSubtotal excl VAT: 1000 EUR\nVAT 21%: 210 EUR\nTotal due: 1210 EUR`);
+assert.equal(integerAmounts.netAmount.value, "1000.00");
+assert.equal(integerAmounts.vatAmount.value, "210.00");
+assert.equal(integerAmounts.payableAmount.value, "1210.00");
 
 const noLines = structuredClone(data);
 noLines.lines = [];
