@@ -3,7 +3,7 @@ name: CI
 
 on:
   push:
-    branches: ["compliance-hardening", "auth-database-foundation"]
+    branches: ["main", "compliance-hardening", "auth-database-foundation"]
   pull_request:
 
 permissions:
