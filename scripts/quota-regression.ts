@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { promisify } from "node:util";
 import { consumeAnonymousQuota, getAnonymousQuota } from "../src/lib/peppol/quota";
+
+const execFileAsync = promisify(execFile);
 
 const storage = new Map<string, string>();
 globalThis.window = { localStorage: { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => { storage.set(key, value); } } } as unknown as Window & typeof globalThis;
@@ -22,7 +25,6 @@ assert.ok(databaseUrl, "DATABASE_URL is required for quota regression");
 const sql = `
 BEGIN;
 INSERT INTO users (email, password_hash) VALUES ('quota-regression@example.test', 'synthetic-hash');
-UPDATE usage_quota SET conversions_used = 4 WHERE false;
 DO $$
 DECLARE uid uuid; first_count integer; second_count integer;
 BEGIN
@@ -68,4 +70,37 @@ ROLLBACK;
 `;
 execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-X", "--no-psqlrc", "--dbname", databaseUrl], { input: sql, stdio: ["pipe", "inherit", "inherit"] });
 
+async function testConcurrentQuota() {
+  const setup = `
+    INSERT INTO users (email, password_hash) VALUES ('quota-concurrency@example.test', 'synthetic-hash');
+    INSERT INTO usage_quota (user_id, period_start, conversions_used, bulk_used)
+    SELECT id, date_trunc('month', current_date)::date, 0, 0 FROM users WHERE email='quota-concurrency@example.test';
+  `;
+  execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-X", "--no-psqlrc", "--dbname", databaseUrl, "-c", setup], { stdio: "inherit" });
+
+  const attempt = `
+    WITH quota AS (
+      INSERT INTO usage_quota (user_id, period_start, conversions_used, bulk_used)
+      SELECT id, date_trunc('month', current_date)::date, 1, 0 FROM users WHERE email='quota-concurrency@example.test'
+      ON CONFLICT (user_id, period_start) DO UPDATE
+        SET conversions_used = usage_quota.conversions_used + 1
+        WHERE usage_quota.conversions_used < 5
+      RETURNING user_id
+    ), inserted AS (
+      INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count)
+      SELECT user_id, 'CONCURRENT-OK-' || substr(md5(random()::text), 1, 8), 'Seller', 'Buyer', 10.00, 'EUR', 'ok', 0 FROM quota
+      RETURNING id
+    ) SELECT count(*) FROM inserted;
+  `;
+  const results = await Promise.all(Array.from({ length: 10 }, () => execFileAsync("psql", ["-t", "-A", "-v", "ON_ERROR_STOP=1", "-X", "--no-psqlrc", "--dbname", databaseUrl, "-c", attempt])));
+  const successes = results.filter(({ stdout }) => stdout.trim() === "1").length;
+  assert.equal(successes, 5, `exactly five of ten concurrent conversion reservations must succeed; got ${successes}`);
+
+  const verification = execFileSync("psql", ["-t", "-A", "-v", "ON_ERROR_STOP=1", "-X", "--no-psqlrc", "--dbname", databaseUrl, "-c", `SELECT (SELECT conversions_used FROM usage_quota WHERE user_id=(SELECT id FROM users WHERE email='quota-concurrency@example.test')) || ':' || (SELECT count(*) FROM conversions WHERE user_id=(SELECT id FROM users WHERE email='quota-concurrency@example.test'));`], { encoding: "utf8" }).trim();
+  assert.equal(verification, "5:5", `concurrent quota/history state must be 5:5, got ${verification}`);
+
+  execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-X", "--no-psqlrc", "--dbname", databaseUrl, "-c", "DELETE FROM users WHERE email='quota-concurrency@example.test';"], { stdio: "inherit" });
+}
+
+await testConcurrentQuota();
 console.log("Quota regression suite: PASS");
