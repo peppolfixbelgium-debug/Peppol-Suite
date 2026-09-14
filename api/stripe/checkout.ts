@@ -1,7 +1,7 @@
 import { getSessionUser, requireSameOrigin } from "../_lib/auth.js";
 import { createCheckoutSession, type BillingInterval, type BillingPlan } from "../_lib/stripe.js";
 
-type VercelRequest = { method?: string; body?: unknown; headers: Record<string, string | string[] | undefined> };
+type VercelRequest = { method?: string; body?: unknown; headers: Record<string, string | string[] | undefined>; url?: string };
 type VercelResponse = { statusCode?: number; setHeader(name: string, value: string): VercelResponse; end(body?: string): void };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
 
@@ -28,9 +28,11 @@ export async function handleCheckout(request: Request): Promise<Response> {
 }
 
 export default async function handler(request: VercelRequest, response: VercelResponse): Promise<void> {
-  const webRequest = new Request("https://${header(request, "host") ?? "localhost"}${(request as { url?: string }).url ?? "/"}", {
+  const headers = Object.fromEntries(Object.entries(request.headers).flatMap(([name, value]) => value == null ? [] : [[name, Array.isArray(value) ? value.join(", ") : value]]));
+  const url = new URL(request.url ?? "/api/stripe/checkout", `https://${header(request, "host") ?? "localhost"}`).toString();
+  const webRequest = new Request(url, {
     method: request.method ?? "GET",
-    headers: Object.fromEntries(Object.entries(request.headers).flatMap(([name, value]) => value == null ? [] : [[name, Array.isArray(value) ? value.join(", ") : value]])),
+    headers,
     body: request.method === "GET" || request.method === "HEAD" ? undefined : typeof request.body === "string" ? request.body : JSON.stringify(request.body ?? {}),
   });
   const result = await handleCheckout(webRequest);
