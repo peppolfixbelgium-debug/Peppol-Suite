@@ -39,8 +39,7 @@ function Privacy() {
           </p>
           <p className="mt-3">
             Signed-in conversion history and quota use metadata can include invoice number, supplier and customer
-            names, total, currency, status, issue count and creation time. The current implementation does not
-            store the uploaded PDF or generated XML body in the database.
+            names, total, currency, status, issue count and creation time. The current implementation does not store the uploaded PDF or generated XML body in the database.
           </p>
         </section>
 
@@ -61,9 +60,8 @@ function Privacy() {
           <h2 className="mb-2 text-base font-semibold text-foreground">4. Cookies and local browser storage</h2>
           <p>
             Signed-in sessions use authentication cookies configured as HttpOnly, SameSite=Lax and Secure in
-            production. Anonymous trial usage uses localStorage in the browser. The exact cookie inventory,
-            consent requirements and any non-essential storage behavior must be confirmed as part of the final
-            legal/privacy review.
+            production. Anonymous trial usage uses localStorage. The exact cookie inventory, consent requirements
+            and any non-essential storage behavior must be confirmed as part of the final legal/privacy review.
           </p>
         </section>
 
