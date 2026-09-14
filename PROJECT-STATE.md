@@ -13,11 +13,10 @@ Last updated: 2026-09-14
 - Production platform: Vercel + Neon PostgreSQL
 - Do not expose credentials or secrets.
 
-## Current repository checkpoint — 2026-09-14
-- **Current `main`: `a1c558b24cc6ddfc6e38d38f67b0930268babe99`** (`docs: sync project state to verified current main deployment`).
-- This latest `main` commit is documentation/state synchronization, not new product implementation.
-- Prior `main` docs checkpoint was `07228f5`; the repository has advanced since that checkpoint.
-- Do not infer production readiness from a deployment status alone; exact deployment and fresh CI/E2E evidence are required.
+## Current repository checkpoint — 2026-09-14 04:56 CEST
+- **Current `main`: `d16cda4488e99b6ce7dcc32ba678f7f1114c0351`** (`docs: update project state for CEO HQ checkpoint`).
+- Recent `main` commits since the prior checkpoint are documentation/state synchronization only; no new substantive product implementation is verified.
+- GitHub reports no workflow runs attached to the current docs commit, so this checkpoint does not claim fresh CI for `d16cda4` or infer production readiness from commit/deployment state alone.
 - Latest substantive CI evidence remains **run #85 — SUCCESS** for PR #20 branch commit `127bc6d…` from 2026-09-11.
 
 ## Governance / DQM
@@ -33,7 +32,7 @@ Last updated: 2026-09-14
 
 ## Legal / GDPR
 - **RED:** launch blocker.
-- Mandatory audit now includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
+- Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
 - Privacy page readability is a specific UX requirement: simplify/restructure excessive density without omitting legally required substance.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
