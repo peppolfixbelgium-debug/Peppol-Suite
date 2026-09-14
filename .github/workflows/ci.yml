@@ -1,4 +1,4 @@
-# Full validation uses the committed lockfile plus disposable PostgreSQL.
+# Full validation uses the committed dependency declarations plus disposable PostgreSQL.
 name: CI
 
 on:
@@ -34,6 +34,7 @@ jobs:
         with:
           node-version: 24.x
           cache: npm
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - run: npm ci --no-audit --no-fund
       - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_auth_database.sql
       - run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_stripe_billing.sql
