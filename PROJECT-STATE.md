@@ -14,9 +14,9 @@ Last updated: 2026-09-14
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-14 04:56 CEST
-- **Current `main`: `d16cda4488e99b6ce7dcc32ba678f7f1114c0351`** (`docs: update project state for CEO HQ checkpoint`).
-- Recent `main` commits since the prior checkpoint are documentation/state synchronization only; no new substantive product implementation is verified.
-- GitHub reports no workflow runs attached to the current docs commit, so this checkpoint does not claim fresh CI for `d16cda4` or infer production readiness from commit/deployment state alone.
+- **Current `main`: `e3cd346420fa20d0e3df8d3f2627a60d120d53f0`** (R&D feature-gap research artifact added after the CEO 24-hour execution order).
+- Prior state-sync commit `933c456516d60d82c8052db43012bd76dabb8d6c` recorded the R&D decision set; no new product implementation was introduced by the R&D work.
+- GitHub reports no fresh workflow evidence for the R&D documentation commits, so this checkpoint does not infer production readiness from them.
 - Latest substantive CI evidence remains **run #85 — SUCCESS** for PR #20 branch commit `127bc6d…` from 2026-09-11.
 
 ## Governance / DQM
@@ -65,6 +65,7 @@ Last updated: 2026-09-14
 - **GREEN for initial market scan and feature-gap decision set — 2026-09-14.** Current research confirms the generic Peppol sending/accounting market is crowded and that free validation itself is increasingly commoditized. The strongest defensible launch hypothesis remains a focused document-problem workflow: validate → inspect/understand → explain errors → fix/convert → revalidate → export/history → bulk → accountant workflow.
 - Completed R&D matrix decision set: P0 = existing reliability/launch gates only; P1 = guided validation troubleshooting and accountant multi-document workflow/reporting, but only after customer evidence/effort check; P2 = API/integrations/deeper workflow automation after evidence; PARK = generic accounting, banking, CRM, tax filing and full Access Point/sending-receiving stack before first-customer evidence.
 - Current competitor evidence reviewed 2026-09-14: Peppolio combines validation, plain-language reports, batch processing and conversion; Peppol Validator offers free no-signup batch validation and shareable results; UBLExplain focuses browser-local validation/error explanation/viewer/checkers; InvoiceValidator.eu combines rule explanations, ZIP validation and auto-fix; e-invoice.be offers PDF→UBL conversion, validation and Peppol API/delivery. These establish that basic validation, batch validation, explanation and conversion are no longer sufficient as standalone differentiation.
+- R&D artifact committed as `docs/rd-feature-gap-matrix-2026-09-14.md` in commit `e3cd346420fa20d0e3df8d3f2627a60d120d53f0`; it contains the completed matrix, P0/P1/P2/PARK decisions, BUILD/TEST/DEFER/REJECT recommendations and customer-validation test.
 - R&D therefore recommends prioritizing workflow depth and trust: actionable fix guidance tied to exact validation findings, safe revalidation, transparent processing/privacy behavior, useful history/export, and accountant-oriented repeat workflows. No engineering implementation is requested from R&D solely from competitor parity.
 - Customer-validation requirement remains open: test whether Belgian accountants/bookkeepers/SMEs will pay for reducing document rejection/troubleshooting time before adding P1 scope.
 
