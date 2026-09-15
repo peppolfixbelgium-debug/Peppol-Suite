@@ -69,8 +69,8 @@ assert.match(stripeSource, /export function assertTestMode/, "Stripe checkout mu
 assert.match(stripeSource, /if \(stripeMode\(\) !== \"test\"\)/, "Stripe live keys must be rejected by checkout and portal session creation");
 assert.match(checkoutSource, /requireSameOrigin\(request\)/, "Stripe checkout must require same-origin protection");
 assert.match(checkoutSource, /Authentication required\./, "Stripe checkout must require an authenticated user");
-assert.match(checkoutSource, /input\.plan !== \"pro\" && input\.plan !== \"business\"/, "Stripe checkout must accept only approved paid plans");
-assert.match(checkoutSource, /input\.interval !== \"month\" && input\.interval !== \"year\"/, "Stripe checkout must accept only monthly or annual cadence");
+assert.match(checkoutSource, /input\?\.plan !== \"pro\" && input\?\.plan !== \"business\"/, "Stripe checkout must accept only approved paid plans");
+assert.match(checkoutSource, /input\?\.interval !== \"month\" && input\?\.interval !== \"year\"/, "Stripe checkout must accept only monthly or annual cadence");
 assert.match(privacySource, /Google or with email and password/, "Privacy page must describe current authentication accurately");
 assert.match(privacySource, /Microsoft and itsme/, "Future sign-in providers must be clearly described as planned");
 assert.match(privacySource, /browser.*PDF|PDF.*browser/i, "Privacy page must describe browser-side PDF processing");
