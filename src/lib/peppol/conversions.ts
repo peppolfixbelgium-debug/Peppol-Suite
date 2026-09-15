@@ -31,3 +31,10 @@ export async function saveConversion(_userId: string, data: Omit<ConversionRow, 
   if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Unable to save conversion.");
   return result.conversion as ConversionRow;
 }
+
+export async function saveBulkConversion(_userId: string, data: Omit<ConversionRow, "id" | "created_at">): Promise<ConversionRow> {
+  const response = await fetch("/api/conversions", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, kind: "bulk", issue_count: data.issue_count ?? 0 }) });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Monthly bulk document limit reached.");
+  return result.conversion as ConversionRow;
+}
