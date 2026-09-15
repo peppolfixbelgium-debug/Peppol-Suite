@@ -84,11 +84,13 @@ function extractAmountAfter(text: string, patterns: RegExp[]): string {
 function explicitLine(text: string): InvoiceLine | null {
   const description = firstMatch(text, [/(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*([^\n]+)/i]);
   const amount = firstMatch(text, [/(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*(?:€|EUR)?\s*([0-9][0-9., ]*)/i]);
+  const adjacentDescription = description ?? firstAdjacentLabelValue(text, /^(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*$/i, /^(?!$)([^\n]+)$/i);
+  const adjacentAmount = amount ?? firstAdjacentLabelValue(text, /^(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*$/i, /(?:€|EUR)?\s*([0-9][0-9., ]*)/i);
   const vat = text.match(/(?:vat|btw|tva)\s+(\d{1,2})\s*%/i);
-  if (!description?.value || !amount?.value) return null;
-  const unit = parseAmount(amount.value);
+  if (!adjacentDescription?.value || !adjacentAmount?.value) return null;
+  const unit = parseAmount(adjacentAmount.value.replace(/\s+(?:EUR|€)\s*$/i, "").trim());
   if (unit === null) return null;
-  return { description: description.value.replace(/\s+/g, " ").trim(), quantity: "1", unitCode: "C62", unitPrice: moneyString(unit), baseQuantity: "1", vatRate: vat?.[1] ?? "21", lineTotal: moneyString(unit), allowanceAmount: "0.00", chargeAmount: "0.00" };
+  return { description: adjacentDescription.value.replace(/\s+/g, " ").trim(), quantity: "1", unitCode: "C62", unitPrice: moneyString(unit), baseQuantity: "1", vatRate: vat?.[1] ?? "21", lineTotal: moneyString(unit), allowanceAmount: "0.00", chargeAmount: "0.00" };
 }
 
 function extractLines(text: string): InvoiceLine[] {
