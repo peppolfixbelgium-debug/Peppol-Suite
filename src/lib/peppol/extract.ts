@@ -81,7 +81,19 @@ function extractAmountAfter(text: string, patterns: RegExp[]): string {
   return "";
 }
 
+function explicitLine(text: string): InvoiceLine | null {
+  const description = firstMatch(text, [/(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*([^\n]+)/i]);
+  const amount = firstMatch(text, [/(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*(?:€|EUR)?\s*([0-9][0-9., ]*)/i]);
+  const vat = text.match(/(?:vat|btw|tva)\s+(\d{1,2})\s*%/i);
+  if (!description?.value || !amount?.value) return null;
+  const unit = parseAmount(amount.value);
+  if (unit === null) return null;
+  return { description: description.value.replace(/\s+/g, " ").trim(), quantity: "1", unitCode: "C62", unitPrice: moneyString(unit), baseQuantity: "1", vatRate: vat?.[1] ?? "21", lineTotal: moneyString(unit), allowanceAmount: "0.00", chargeAmount: "0.00" };
+}
+
 function extractLines(text: string): InvoiceLine[] {
+  const explicit = explicitLine(text);
+  if (explicit) return [explicit];
   const lines: InvoiceLine[] = [];
   for (const raw of text.split(/\n/)) {
     const line = raw.trim();
@@ -96,15 +108,6 @@ function extractLines(text: string): InvoiceLine[] {
     const reported = parseAmount(m[6]);
     if (qty === null || unit === null || reported === null) continue;
     lines.push({ description: m[1].replace(/\s+/g, " ").trim(), quantity: String(qty), unitCode, unitPrice: moneyString(unit), baseQuantity: "1", vatRate, lineTotal: moneyString(reported), allowanceAmount: "0.00", chargeAmount: "0.00" });
-  }
-  if (!lines.length) {
-    const description = firstMatch(text, [/(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*([^\n]+)/i]);
-    const amount = firstMatch(text, [/(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*(?:€|EUR)?\s*([0-9][0-9., ]*)/i]);
-    const vat = text.match(/(?:vat|btw|tva)\s+(\d{1,2})\s*%/i);
-    if (description?.value && amount?.value) {
-      const unit = parseAmount(amount.value);
-      if (unit !== null) lines.push({ description: description.value.replace(/\s+/g, " ").trim(), quantity: "1", unitCode: "C62", unitPrice: moneyString(unit), baseQuantity: "1", vatRate: vat?.[1] ?? "21", lineTotal: moneyString(unit), allowanceAmount: "0.00", chargeAmount: "0.00" });
-    }
   }
   return lines;
 }
