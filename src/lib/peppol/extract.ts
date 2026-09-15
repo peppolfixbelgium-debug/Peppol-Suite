@@ -37,7 +37,7 @@ const IBAN_PATTERNS = [/\b([A-Z]{2}\d{2}[A-Z0-9]{11,30})\b/gi];
 const VAT_PATTERN = /\b(?:BTW|TVA|VAT|BE)\s*:?[\s./-]*(BE)?([0-9]{3,4}[\s./-]?[0-9]{3}[\s./-]?[0-9]{3})\b/gi;
 const NET_PATTERNS = [/(?:subtotaal(?:\s*excl\.?\s*btw)?|subtotal(?:\s*excl\.?\s*vat)?|amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|hors\s*tva|net\s*(?:amount|total)|totaal\s*excl|netto(?:\s*totaal|\s*bedrag)?)/i];
 const VAT_AMT_PATTERNS = [/^\s*(?:btw|tva|vat)(?:(?:\s+\d{1,2}\s*%)|\s*[:.-])/i];
-const PAY_PATTERNS = [/(?:totaal\s*te\s*betalen|total\s*(?:due|payable|te\s*betalen)|montant\s*[aà]\s*payer|grand\s*total|te\s*betalen|amount\s*due)/i];
+const PAY_PATTERNS = [/(?:totaal\s*te\s*betalen|total\s*(?:due|payable|te\s*betalen)|total\s*[:.]|montant\s*[aà]\s*payer|grand\s*total|te\s*betalen|amount\s*due)/i];
 
 function collectVats(text: string): string[] {
   const found: string[] = [];
