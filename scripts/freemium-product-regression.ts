@@ -54,7 +54,7 @@ assert.match(pricingPageSource, /billingPeriod: \"Facturatieperiode\"/, "Dutch p
 assert.match(pricingPageSource, /saveYear: \"Save\"/, "Annual savings copy must explicitly identify the savings amount");
 assert.match(pricingPageSource, /saveYear: \"Économisez\"/, "French annual savings copy must explicitly identify the savings amount");
 assert.match(pricingPageSource, /saveYear: \"Bespaar\"/, "Dutch annual savings copy must explicitly identify the savings amount");
-assert.match(pricingPageSource, /annualSaving\}\/<\{copy\[lang\]\.year\}/, "Annual savings must be expressed with an explicit annual unit");
+assert.match(pricingPageSource, /annualSaving\}\s*\/\s*\{copy\[lang\]\.year\}/, "Annual savings must be expressed with an explicit annual unit");
 assert.match(pricingSource, /fr: \{ name: \"Gratuit\"/, "French pricing tier labels must be defined");
 assert.match(pricingSource, /nl: \{ name: \"Gratis\"/, "Dutch pricing tier labels must be defined");
 assert.match(entitlementMigration, /monthly_conversion_limit = 5, monthly_bulk_limit = 0/, "Free must have 5 document units and no bulk allowance");
