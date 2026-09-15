@@ -16,7 +16,7 @@ Last updated: 2026-09-15
 - **Current `main`: `a795aae29ac81b74f4e0658b7db61a3bb205976b`**, explicit invoice-line extraction hardening after CI #145 exposed a BPOST regression where the line item was present but its line total was blank.
 - CI #145 on `665944d8862eb2595a811e670432524de5c367e9` failed only in `test:regression`; migrations, typecheck, lint and build passed. The failure was `bpost.lines[0].lineTotal === ""` instead of `100.00`.
 - Fix `a795aae29ac81b74f4e0658b7db61a3bb205976b` makes the explicit `Description` + `Amount excl VAT` extraction path authoritative before generic line parsing, ensuring the deterministic BPOST fixture produces a complete line with `100.00` line total.
-- CI verification for `a795aae29ac81b74f4e0658b7db61a3bb205976b` is pending; do not claim GREEN until it completes successfully.
+- **Verification gate:** GitHub currently exposes no workflow run for `a795aae29ac81b74f4e0658b7db61a3bb205976b`; this state update intentionally triggers the repository's push CI so the fix can be independently verified. Do not claim GREEN until that run completes successfully.
 - Prior converter UX hardening remains on main: explicit PASS/FAIL/NOT CHECKED, rejection of empty/non-PDF/unreadable/non-invoice-looking uploads, invoice-date-before-number handling and integer amount extraction.
 - Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
 
@@ -73,7 +73,7 @@ Last updated: 2026-09-15
 - Early high-fit Belgian prospects have been identified; next proof is 20 qualified prospects plus personalized discovery outreach preparation, followed by Founder approval before first live outbound.
 
 ## R&D / Product Intelligence
-- **GREEN for initial market scan and feature-gap decision set — 2026-09-14.** Generic Peppol sending/accounting is crowded; basic validation, batch validation, explanation and conversion are not sufficient standalone differentiation.
+- **GREEN for initial market scan and feature-gap decision set — 2026-09-14.** Generic Peppol sending/accounting is crowded; basic validation, explanation, batch validation and conversion are not sufficient standalone differentiation.
 - Highest-value hypothesis remains workflow depth and trust: validate → understand → fix/convert → revalidate → export/history → bulk → accountant workflow.
 - P1 feature implementation remains gated on customer evidence.
 
