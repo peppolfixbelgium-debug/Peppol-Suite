@@ -13,14 +13,14 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `1b1058eedd5f2d7aa9889b821686502bf56988ba`.**
-- CI **#156** (`34948279360`) completed **SUCCESS** on that exact SHA.
-- Latest parser follow-up `1b1058e...` restores invoice data fields after line-parser hardening; current regression coverage remains active.
+- **Current `main`: privacy-readability hardening commit `b14df28a09e952f1df2230c3ca21325f3c211ab2`.**
+- CI #157 (`34953287306`) completed SUCCESS on the preceding verified main checkpoint `4b7136e7d2efc3e459c3523ca6750a8ec7e7eec9`.
+- Latest product change improves the Privacy page reading experience with larger body text, increased line spacing, narrower readable content width, stronger section headings, and section anchors; no substantive privacy claims were added.
+- CI for `b14df28...` has not yet appeared; do not claim this latest change is CI-verified until a run completes.
 - Recent parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
 - Converter UX on main explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
-- Bulk conversion now reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
-- The prior CI #127 failure on `97a7fc3...` is superseded by later fixes; it is not current CI state.
-- **Verification gate:** repository CI is currently GREEN on `main`. Production deployment must still be independently verified against the current SHA before declaring production GREEN.
+- Bulk conversion reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
+- **Verification gate:** repository CI is green on the preceding verified checkpoint; latest privacy change remains pending independent CI verification. Production deployment must still be independently verified against the latest SHA before declaring production GREEN.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -46,7 +46,7 @@ Last updated: 2026-09-15
 ## Legal / GDPR
 - **RED:** launch blocker.
 - Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
-- Privacy page readability remains a specific UX requirement.
+- Privacy page readability was hardened internally on `b14df28...`; this improves UX presentation only and does not constitute professional legal review.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
@@ -78,7 +78,7 @@ Last updated: 2026-09-15
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Verify current production deployment is serving `1b1058e...`.
+1. Verify current production deployment is serving the latest verified SHA.
 2. Engineering/DQM: close production 3-PDF + bulk-ZIP real-browser E2E and remaining quota/anonymous-trial evidence.
 3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
 4. Pricing/Product: verify production pricing against Founder-approved baseline.
