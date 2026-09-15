@@ -5,6 +5,8 @@ const quotaSource = readFileSync("src/lib/peppol/quota.ts", "utf8");
 const converterSource = readFileSync("src/routes/converter.tsx", "utf8");
 const bulkSource = readFileSync("src/routes/bulk.tsx", "utf8");
 const conversionApi = readFileSync("api/conversions.ts", "utf8");
+const conversionsSource = readFileSync("src/lib/peppol/conversions.ts", "utf8");
+const dashboardSource = readFileSync("src/routes/dashboard.tsx", "utf8");
 const usageApi = readFileSync("api/usage.ts", "utf8");
 const pricingSource = readFileSync("src/lib/peppol/pricing.ts", "utf8");
 const pricingPageSource = readFileSync("src/routes/pricing.tsx", "utf8");
@@ -19,6 +21,14 @@ assert.match(converterSource, /if\s*\(\s*conversionSaved\s*\)/, "Repeated downlo
 assert.match(conversionApi, /WITH quota AS/, "Server conversion quota and history must be committed atomically in one SQL statement");
 assert.match(conversionApi, /input\.kind !== \"conversion\"/, "Conversion API must accept only the single-conversion entitlement path");
 assert.doesNotMatch(conversionApi, /kind === \"bulk\"/, "Conversion API must not provide a quota-bypassing bulk record path");
+assert.match(conversionApi, /request\.method === \"DELETE\"/, "Conversion API must expose an authenticated deletion path");
+assert.match(conversionApi, /DELETE FROM conversions WHERE user_id = \$\{user\.id\}/, "History deletion must be scoped to the authenticated user");
+assert.match(conversionApi, /requireSameOrigin\(request\)/, "State-changing conversion deletion must require same-origin protection");
+assert.match(conversionApi, /conversion_history_deleted/, "History deletion must emit a security audit event");
+assert.match(conversionsSource, /deleteConversionHistory/, "Client conversion library must expose history deletion");
+assert.match(dashboardSource, /deleteConversionHistory\(\)/, "Dashboard must invoke the authenticated history deletion path");
+assert.match(dashboardSource, /Delete history/, "Dashboard must expose the deletion control");
+assert.match(dashboardSource, /cannot be undone/, "Deletion control must warn that history deletion is irreversible");
 assert.match(usageApi, /plan\?\.plan_id===\"free\"/, "Bulk entitlement must be enforced server-side for Free accounts");
 assert.match(usageApi, /bulk_used=usage_quota\.bulk_used\+1/, "Bulk job usage must be atomic");
 assert.match(bulkSource, /consumeBulkQuota\(\)/, "Bulk conversion must reserve a bulk job entitlement");
@@ -50,7 +60,8 @@ assert.match(privacySource, /does\s+not\s+store the uploaded PDF or generated XM
 assert.match(privacySource, /Vercel/, "Privacy page must identify current hosting infrastructure");
 assert.match(privacySource, /Neon PostgreSQL/, "Privacy page must identify current database infrastructure");
 assert.match(privacySource, /Signed-in users can currently export the conversion-history metadata/, "Privacy page must accurately disclose the implemented history CSV export");
-assert.match(privacySource, /There is currently no self-service account or conversion-history deletion control/, "Privacy page must not imply self-service deletion is implemented");
+assert.match(privacySource, /Signed-in users can also currently delete their saved conversion-history metadata/, "Privacy page must accurately disclose history deletion");
+assert.doesNotMatch(privacySource, /There is currently no self-service account or conversion-history deletion control/, "Privacy page must not retain the obsolete no-deletion claim");
 assert.doesNotMatch(privacySource, /Stripe/i, "Privacy page must not imply live Stripe/payment processing exists");
 
 console.log("Freemium/product/privacy regression: PASS");
