@@ -21,8 +21,8 @@ assert.match(converterSource, /consumeAnonymousQuota\(\)/, "Anonymous successful
 assert.match(converterSource, /saveConversion\([\s\S]*?issue_count:\s*result\.issues\.length/, "Authenticated conversion history must persist the actual validation issue count");
 assert.match(converterSource, /if\s*\(\s*conversionSaved\s*\)/, "Repeated downloads must not create duplicate conversion records");
 assert.match(conversionApi, /WITH quota AS/, "Server conversion quota and history must be committed atomically in one SQL statement");
-assert.match(conversionApi, /input\.kind !== \"conversion\"/, "Conversion API must accept only the single-conversion entitlement path");
-assert.doesNotMatch(conversionApi, /kind === \"bulk\"/, "Conversion API must not provide a quota-bypassing bulk record path");
+assert.match(conversionApi, /input\.kind !== \"conversion\" && input\.kind !== \"bulk\"/, "Conversion API must accept only explicit conversion or bulk record kinds");
+assert.match(conversionApi, /input\.kind === \"bulk\"/, "Bulk history must use the separate bulk entitlement path");
 assert.match(conversionApi, /request\.method === \"DELETE\"/, "Conversion API must expose an authenticated deletion path");
 assert.match(conversionApi, /DELETE FROM conversions WHERE user_id = \$\{user\.id\}/, "History deletion must be scoped to the authenticated user");
 assert.match(conversionApi, /requireSameOrigin\(request\)/, "State-changing conversion deletion must require same-origin protection");
@@ -33,10 +33,9 @@ assert.match(dashboardSource, /Delete history/, "Dashboard must expose the delet
 assert.match(dashboardSource, /cannot be undone/, "Deletion control must warn that history deletion is irreversible");
 assert.match(usageApi, /plan\?\.plan_id===\"free\"/, "Bulk entitlement must be enforced server-side for Free accounts");
 assert.match(usageApi, /bulk_used=usage_quota\.bulk_used\+1/, "Bulk job usage must be atomic");
-assert.match(bulkSource, /consumeBulkQuota\(\)/, "Bulk conversion must reserve a bulk job entitlement");
-assert.match(bulkSource, /bulkReserved/, "One bulk upload must consume one bulk job entitlement");
-assert.match(bulkSource, /saveConversion\(/, "Each successful bulk PDF must be persisted to history");
-assert.doesNotMatch(bulkSource, /saveConversion\([^\n]+\"bulk\"\)/, "Bulk PDFs must consume conversion allowance, not one bulk slot each");
+assert.match(bulkSource, /saveBulkConversion\(/, "Bulk conversion must persist successful documents through the bulk history path");
+assert.match(bulkSource, /bulkRemaining/, "Bulk conversion must track the separate bulk document allowance");
+assert.doesNotMatch(bulkSource, /saveConversion\(/, "Bulk conversion must not consume the normal conversion persistence path");
 assert.match(bulkSource, /MAX_ZIP_BYTES=50\*1024\*1024/, "Bulk ZIP size must be bounded");
 assert.match(bulkSource, /MAX_ZIP_ENTRIES=100/, "Bulk ZIP entry count must be bounded");
 assert.match(bulkSource, /MAX_EXTRACTED_BYTES=100\*1024\*1024/, "Bulk extracted size must be bounded");
