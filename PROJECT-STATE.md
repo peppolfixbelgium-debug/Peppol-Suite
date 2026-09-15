@@ -1,23 +1,19 @@
 # Peppol Suite — Project State
 
 ## Current execution checkpoint
-- Annual pricing savings are now explicitly presented on the pricing page for Pro and Business in English, French, and Dutch.
-- Current displayed annual pricing: Pro €149/year vs €178.80 at monthly rate (16.7% saving); Business €449/year vs €538.80 (16.7% saving).
-- Pricing UX hardening commit `fb1e6af79175fea22148606e07182ccab0fa49d3` now labels the billing-period control in the active language and makes the annual saving amount explicitly annual in English, French, and Dutch. This does not alter the Founder-approved prices or activate live payments.
-- Regression commit `79695b4b74e8e286d1e16f4bca15c8cba231927a` locks the localized billing-period labels and explicit annual-savings semantics into the freemium/product regression suite.
-- Pricing issue #52 remains open for Pricing-team / Founder confirmation of the final annual-billing commercial model; no commercial baseline was changed.
-- Founder approval remains required before changing approved commercial pricing or enabling live billing.
-- Authenticated conversion-history deletion is implemented on main: `api/conversions.ts` supports same-origin-protected DELETE scoped to the authenticated session user and records `conversion_history_deleted`; the dashboard exposes confirmation-gated Delete history and the client library invokes the endpoint.
-- Privacy copy now accurately discloses history deletion as distinct from account deletion and full GDPR portability.
-- Regression coverage in `scripts/freemium-product-regression.ts` checks deletion ownership scoping, same-origin protection, audit-event emission, dashboard wiring, irreversible warning copy, and the current pricing presentation semantics.
-- Deletion checkpoint commits: `f2d5a852...`, `e3d6e5ae...`, `c321f9b3...`, `a337193a...`, `5eea6ead...`; pricing UX commits are recorded above.
-- The pricing UX/regression changes trigger CI verification; no GREEN claim is made until the resulting workflow completes successfully.
+- Current main is `6962123e43c4d5f56987f574a359a650bdcdb64b` after adding regression guards for the Founder-approved pricing amounts, annual discount, and Stripe test-mode checkout controls.
+- Pricing baseline remains unchanged: Pro €14.90/month or €149/year; Business €44.90/month or €449/year; 16.7% annual discount; no live billing activation.
+- Pricing regression now explicitly fails if those approved paid-tier amounts/discount drift, if Stripe checkout loses its test-mode guard, or if checkout accepts an unapproved plan/cadence.
+- Authenticated conversion-history deletion remains implemented with same-origin protection, strict user ownership, audit event emission, confirmation-gated dashboard control, and matching Privacy disclosure.
+- Product/privacy regression coverage also protects the implemented CSV history export and deletion behavior.
 
 ## Current launch posture
 - Product/Engineering remains evidence-gated until production authenticated browser E2E can be independently evidenced.
-- Legal/GDPR remains an external professional-review gate alongside engineering remediation.
-- Live Stripe/payment processing remains OFF.
-- Growth outbound remains OFF pending Founder approval.
+- Production authenticated browser evidence remains an environment limitation documented in #34/#36; API/database checks must not be represented as authenticated UI PASS.
+- Legal/GDPR remains an external professional-review gate; technical copy has been hardened to avoid unsupported claims.
+- Live Stripe/payment processing remains OFF; checkout code is explicitly test-mode guarded.
+- Growth outbound remains OFF pending Founder approval; no paid prospecting credits are authorized.
+- Production deployment still requires independent fresh verification against the latest verified SHA; no Vercel deployment GREEN claim is made without that evidence.
 
 ## Operating rule
 Execute → verify → commit → record evidence → move to the next blocker. Never claim GREEN without verifiable evidence.
