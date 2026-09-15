@@ -69,10 +69,13 @@ function Privacy() {
         <section aria-labelledby="privacy-retention">
           <h2 id="privacy-retention" className="mb-3 text-lg font-semibold text-foreground">5. Deletion, export and retention</h2>
           <p>
-            There is currently no self-service account or conversion-history deletion or export control in the
-            product. Local anonymous quota can be cleared by clearing site data. Account retention periods,
-            deletion procedures, export handling and the operational process for responding to data-rights requests
-            still need to be defined and implemented where required.
+            Signed-in users can currently export the conversion-history metadata shown in the authenticated dashboard
+            as a CSV file. This export is limited to the history metadata available in the dashboard; it does not
+            export uploaded PDFs or generated XML bodies because those bodies are not stored in the account database.
+            There is currently no self-service account or conversion-history deletion control in the product. Local
+            anonymous quota can be cleared by clearing site data. Account retention periods, deletion procedures,
+            broader export handling and the operational process for responding to data-rights requests still need to
+            be defined and implemented where required.
           </p>
         </section>
 
