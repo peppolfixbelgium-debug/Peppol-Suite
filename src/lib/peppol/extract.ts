@@ -14,7 +14,7 @@ function firstAdjacentLabelValue(text: string, label: RegExp, value: RegExp): { 
   for (let i = 0; i < lines.length; i += 1) {
     if (!label.test(lines[i])) continue;
     const sameLine = lines[i].match(value);
-    if (sameLine?.[1]) return { value: sameLine[1].trim(), confidence: "high" };
+    if (sameLine?.[1] && !label.test(lines[i])) return { value: sameLine[1].trim(), confidence: "high" };
     for (let j = i + 1; j < Math.min(i + 3, lines.length); j += 1) {
       const next = lines[j].match(value);
       if (next?.[1]) return { value: next[1].trim(), confidence: "high" };
