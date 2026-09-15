@@ -69,9 +69,14 @@ assert.equal(bpost.vatAmount.value, "21.00");
 assert.equal(bpost.payableAmount.value, "121.00");
 assert.equal(bpost.supplierVat.value, "BE0200123456");
 assert.equal(bpost.customerVat.value, "BE0550123456");
+assert.equal(bpost.paymentAccount.value, "");
 assert.equal(validateInvoice(bpost).ok, false);
 assert.ok(validateInvoice(bpost).issues.some((i) => i.code === "PEPPOL-COMMON-R043"));
-assert.ok(validateInvoice(bpost).issues.some((i) => i.code === "IBAN-01"));
+
+const bpostInvalidIban = structuredClone(bpost);
+bpostInvalidIban.paymentAccount.value = "BE71096123456789";
+assert.ok(!isValidIban(bpostInvalidIban.paymentAccount.value));
+assert.ok(validateInvoice(bpostInvalidIban).issues.some((i) => i.code === "IBAN-01"));
 
 const collision = extractInvoice(`INVOICE\nE2E-SUCCESS-COLLISION\nInvoice date: 15/09/2026\nSupplier Demo SRL\nRue Test 10\n2000 Antwerpen\nVAT number: BE0123456749\nCustomer Demo BV\nAvenue Test 20\n2000 Antwerpen\nVAT number: BE0987654394\nIBAN: BE36 2010 0052 7281\nSubtotal excl VAT: 100.00 EUR\nVAT 21%: 21.00 EUR\nTotal due: 121.00 EUR`);
 assert.equal(collision.vatAmount.value, "21.00");
