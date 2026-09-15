@@ -3,7 +3,7 @@ export const ANONYMOUS_TRIAL_LIMIT = 3;
 const ANONYMOUS_QUOTA_KEY = "peppol-suite-anonymous-quota";
 
 type StoredAnonymousQuota = { period: string; used: number };
-export type QuotaState = { used: number; limit: number; remaining: number };
+export type QuotaState = { used: number; limit: number; remaining: number; bulkUsed?: number; bulkLimit?: number; bulkRemaining?: number };
 
 function currentPeriod(): string {
   const now = new Date();
@@ -43,19 +43,12 @@ export function consumeAnonymousQuota(): QuotaState {
 export async function fetchQuota(): Promise<QuotaState> {
   const response = await fetch("/api/usage", { credentials: "include" });
   if (!response.ok) throw new Error("Unable to load usage quota.");
-  const data = await response.json() as { conversions: { used: number; limit: number } };
+  const data = await response.json() as { conversions: { used: number; limit: number }; bulk?: { used: number; limit: number } };
   const used = Number(data.conversions.used) || 0;
   const limit = Number(data.conversions.limit) || 0;
-  return { used, limit, remaining: Math.max(0, limit - used) };
-}
-
-export async function consumeBulkQuota(): Promise<{ used: number; limit: number; remaining: number }> {
-  const response = await fetch("/api/usage", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "bulk" }) });
-  const data = await response.json().catch(() => ({})) as { used?: unknown; limit?: unknown; error?: unknown };
-  if (!response.ok) throw new Error(typeof data.error === "string" ? data.error : "Monthly bulk limit reached.");
-  const used = Number(data.used) || 0;
-  const limit = Number(data.limit) || 0;
-  return { used, limit, remaining: Math.max(0, limit - used) };
+  const bulkUsed = Number(data.bulk?.used) || 0;
+  const bulkLimit = Number(data.bulk?.limit) || 0;
+  return { used, limit, remaining: Math.max(0, limit - used), bulkUsed, bulkLimit, bulkRemaining: Math.max(0, bulkLimit - bulkUsed) };
 }
 
 export async function consumeQuota(): Promise<QuotaState> {
