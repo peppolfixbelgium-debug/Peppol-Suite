@@ -159,8 +159,10 @@ export function extractInvoice(text: string): InvoiceData {
     currency: guessCurrency(clean),
     buyerReference: buyerReference ? field(buyerReference.value, buyerReference.confidence) : EMPTY_INVOICE.buyerReference,
     orderReference: orderReference ? field(orderReference.value, orderReference.confidence) : EMPTY_INVOICE.orderReference,
-    supplierName: field(supplierName, supplierName ? "high" : "low"), supplierVat: field(supplierVats[0] ?? "", supplierVats[0] ? "high" : "low"), supplierStreet: field(supplierStreet, supplierStreet ? "medium" : "low"), supplierCity: field(supplierCity, supplierCity ? "medium" : "low"), supplierPostal: field(supplierPostal, supplierPostal ? "medium" : "low"), supplierCountry: field(supplierLoc.country, "medium"),
-    customerName: field(customerName, customerName ? "high" : "low"), customerVat: field(customerVats[0] ?? "", customerVats[0] ? "high" : "low"), customerStreet: field(customerStreet, customerStreet ? "medium" : "low"), customerCity: field(customerCity, customerCity ? "medium" : "low"), customerPostal: field(customerPostal, customerPostal ? "medium" : "low"), customerCountry: field(customerLoc.country, "medium"),
-    iban: field(iban, iban ? "high" : "low"), netAmount: field(net, net ? "high" : "low"), vatAmount: field(vatAmt, vatAmt ? "high" : "low"), payableAmount: field(payable, payable ? "high" : "low"), lines,
+    supplierName: field(supplierName, supplierName ? "high" : "low"), supplierVat: field(supplierVats[0] ?? "", supplierVats[0] ? "high" : "low"), supplierStreet: field(supplierStreet, supplierStreet ? "medium" : "low"), supplierCity: field(supplierCity, supplierCity ? "high" : "low"), supplierPostal: field(supplierPostal, supplierPostal ? "high" : "low"), supplierCountry: field(supplierLoc.country, "medium"),
+    customerName: field(customerName, customerName ? "high" : "low"), customerVat: field(customerVats[0] ?? "", customerVats[0] ? "high" : "low"), customerStreet: field(customerStreet, customerStreet ? "medium" : "low"), customerCity: field(customerCity, customerCity ? "high" : "low"), customerPostal: field(customerPostal, customerPostal ? "high" : "low"), customerCountry: field(customerLoc.country, "medium"),
+    netAmount: field(net, net ? "high" : "low"), vatAmount: field(vatAmt, vatAmt ? "medium" : "low"), payableAmount: field(payable, payable ? "high" : "low"), paymentAccount: field(iban, iban ? "high" : "low"), paymentReference: paymentReference ? field(paymentReference.value, paymentReference.confidence) : EMPTY_INVOICE.paymentReference, lines, notes: "",
   };
 }
+
+export function setField<K extends keyof InvoiceData>(data: InvoiceData, key: K, value: InvoiceData[K]): InvoiceData { return { ...data, [key]: value }; }
