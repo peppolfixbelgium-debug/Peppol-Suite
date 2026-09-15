@@ -13,14 +13,14 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `3a3a7deb5bd843d87949f3bc9dd24c0974a12ed7`**, following deterministic invoice-line extraction hardening, payable-total extraction hardening, freemium regression-test correction, and a legal copy correction.
-- CI #151 on `4bb9872168c69dc1fcd5d7e32bd3b49874c74203` independently verified the parser regression suite and all preceding gates, then failed at `test:freemium-product` on a brittle test assertion requiring `if(conversionSaved)` without allowing normal whitespace. The production converter code itself contains the guarded `if (conversionSaved)` path.
-- Fix `5477b475a3aa193e1f1d3143e115f616ec64787a` made the explicit `Description` + `Amount excl VAT` line path deterministic and verified by the same CI run: `test:regression` passed, as did OAuth security, auth, Vercel API, usage/conversion adapters and bulk-history regression suites.
-- Fix `9f9b6a3851f01a1b7fe2a67a05b86e62140c8889` corrected the freemium regression assertion to accept normal TypeScript formatting: `/if\s*\(\s*conversionSaved\s*\)/`. CI #153 was created for that exact SHA but failed before test execution because the GitHub runner stalled during container initialization; no product-test result was inferred from that infrastructure failure.
-- Fix `3a3a7deb5bd843d87949f3bc9dd24c0974a12ed7` removes an unverified legal claim from the Terms draft about a specific 2026 B2B mandate and replaces it with a neutral statement that applicable Belgian/EU invoicing rules must be followed. This is an internal copy-safety fix, not professional legal approval.
-- **Verification gate:** `main` is not GREEN. CI #153 is a verified infrastructure-stall failure and the latest Terms commit has no independently completed CI run yet. Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
-- Prior converter UX hardening remains on main: explicit PASS/FAIL/NOT CHECKED, rejection of empty/non-PDF/unreadable/non-invoice-looking uploads, invoice-date-before-number handling and integer amount extraction.
-- Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
+- **Current `main`: `1b1058eedd5f2d7aa9889b821686502bf56988ba`.**
+- CI **#156** (`34948279360`) completed **SUCCESS** on that exact SHA.
+- Latest parser follow-up `1b1058e...` restores invoice data fields after line-parser hardening; current regression coverage remains active.
+- Recent parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
+- Converter UX on main explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
+- Bulk conversion now reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
+- The prior CI #127 failure on `97a7fc3...` is superseded by later fixes; it is not current CI state.
+- **Verification gate:** repository CI is currently GREEN on `main`. Production deployment must still be independently verified against the current SHA before declaring production GREEN.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -30,12 +30,12 @@ Last updated: 2026-09-15
 ## Product / Engineering / Production QA
 - **AMBER:** core auth/conversion/bulk/freemium foundation remains supported by merged PRs #18/#19/#20 and quota-concurrency regression work.
 - OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced.
-- Converter explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
-- PDF extraction limits remain 20 MB / 50 pages; scanned PDFs without extractable text are rejected with an explicit message rather than being treated as empty invoice data.
-- Parser regression coverage includes invoice-date-before-number, integer amount extraction and split-label invoice/purchase-order extraction, plus the deterministic BPOST Description/Amount-excl-VAT fixture.
+- PDF extraction limits remain 20 MB / 50 pages; scanned PDFs without extractable text are rejected with an explicit message.
 - **P0 evidence gap:** production 3-PDF + bulk-ZIP real-browser E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
 - Issues #34/#36 explicitly document environment limitations: the available connector cannot perform the complete authenticated browser upload flow with the user's local PDF/ZIP and authenticated browser cookie. Do not fabricate PASS from API-only checks.
-- No full production READY claim until these are independently evidenced.
+- User-provided production screenshots show successful extraction of the synthetic Belgian invoice fields and UBL XML generation; bulk screenshots still need a fresh production run against the latest deployment to prove current production behavior.
+- Vercel deployment SHA could not be freshly independently checked in the latest HQ run because the Vercel connector is currently unavailable.
+- No full production READY claim until independent production evidence is current.
 
 ## Production entitlements
 - Founder explicitly approved the live entitlement migration.
@@ -46,7 +46,7 @@ Last updated: 2026-09-15
 ## Legal / GDPR
 - **RED:** launch blocker.
 - Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
-- Privacy page readability is a specific UX requirement: simplify/restructure excessive density without omitting legally required substance.
+- Privacy page readability remains a specific UX requirement.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
@@ -64,15 +64,13 @@ Last updated: 2026-09-15
 
 ## Stripe
 - **AMBER / test-mode integrated:** PR #44 merged current-main Stripe Checkout/Portal/webhook test-mode implementation at `5480097f…`.
-- Current implementation includes server-side price mapping, authenticated same-origin Checkout, test-key enforcement, signed webhook verification, live-event rejection, event-id idempotency, and billing persistence.
 - **RED/OFF:** live activation intentionally blocked pending company/legal/tax/accounting/pricing/go-live gates and explicit go-live approval.
-- Stale PR #29 was closed without merge on 2026-09-15; it is superseded by the newer current-main Stripe implementation.
 - No live Stripe activation or live payment claim is permitted.
 
 ## Growth / Customer Evidence
 - **AMBER:** discovery route is active; no live outbound has been sent.
 - Apollo is connected but net-new People Search is blocked on the current Free plan; no paid upgrade/credit spend is authorized.
-- Early high-fit Belgian prospects have been identified; next proof is 20 qualified prospects plus personalized discovery outreach preparation, followed by Founder approval before first live outbound.
+- Next proof is 20 qualified prospects plus personalized discovery outreach preparation, followed by Founder approval before first live outbound.
 
 ## R&D / Product Intelligence
 - **GREEN for initial market scan and feature-gap decision set — 2026-09-14.** Generic Peppol sending/accounting is crowded; basic validation, explanation, batch validation and conversion are not sufficient standalone differentiation.
@@ -80,11 +78,11 @@ Last updated: 2026-09-15
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Finish CI verification on current `main` and independently verify its production deployment.
-2. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification using independently available evidence; obtain/execute real-browser sample pack when environment permits.
+1. Verify current production deployment is serving `1b1058e...`.
+2. Engineering/DQM: close production 3-PDF + bulk-ZIP real-browser E2E and remaining quota/anonymous-trial evidence.
 3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
 4. Pricing/Product: verify production pricing against Founder-approved baseline.
-5. Growth: continue prospect qualification and discovery; seek strongest willingness-to-pay evidence without live outbound until approved.
+5. Growth: continue prospect qualification and discovery; no live outbound until approved.
 6. Company: obtain professional confirmation of ownership/operator eligibility and tax/VAT/employment/IP boundaries.
 7. First payment only after the launch gate is GREEN and required Founder/legal/company/tax approvals are obtained.
 
