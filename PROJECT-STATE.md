@@ -13,8 +13,9 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `a4bd8e8236ef349aa2f07b6549301b2bf223ab0f` (`docs: record privacy regression assertion fix`).**
-- **CI #161 (`34959619619`) completed SUCCESS on the exact current `main` SHA.** All validation steps passed: migrations 001/002/003, typecheck, lint, build, core regression, OAuth security/auth regression, Vercel adapters, bulk history, freemium product, quota, and Stripe test-mode regression.
+- **Current `main`: conversion-history export plus prior privacy/readability hardening, latest code commit `0009daa7502e5e5a23d87efd279738cc66777cd4`.**
+- **CI #162 (`34960708705`) completed SUCCESS on the prior documented main checkpoint `240f4ae70b9268ed1440529afe412fef5fc7425c`.** All validation steps passed on that checkpoint.
+- Added a client-side CSV export of the signed-in conversion history in `src/routes/dashboard.tsx` (`0009daa...`). This exposes the metadata already displayed by the authenticated history view without adding a server-side data collection path. It is a conversion-history export capability, not a claim that the full GDPR portability/deletion workflow is complete.
 - Parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
 - Converter UX explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - Bulk conversion reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
@@ -45,6 +46,7 @@ Last updated: 2026-09-15
 - **RED:** launch blocker.
 - Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
 - Privacy page readability was hardened internally; this does not constitute professional legal review.
+- Conversion-history CSV export is now available for authenticated users, but deletion, full-account export, retention and rights-request operations remain open and require further product/legal work.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
