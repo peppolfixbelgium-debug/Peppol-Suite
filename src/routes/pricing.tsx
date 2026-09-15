@@ -14,6 +14,11 @@ function PricingPage() {
     fr: "Tarifs de lancement approuvés par le fondateur. Les paiements ne sont pas encore activés.",
     nl: "Door de oprichter goedgekeurde lanceringstarieven. Betalingen zijn nog niet ingeschakeld.",
   } as const;
+  const annual = {
+    en: { label: "/ year", save: "Save 16.7%", equivalent: "vs monthly" },
+    fr: { label: "/ an", save: "Économisez 16,7 %", equivalent: "vs mensuel" },
+    nl: { label: "/ jaar", save: "Bespaar 16,7%", equivalent: "vs maandelijks" },
+  } as const;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12">
@@ -23,6 +28,7 @@ function PricingPage() {
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         {PRICING.tiers.map((tier) => {
           const localized = tier.localized[lang];
+          const annualLabel = annual[lang];
           return (
             <div
               key={tier.id}
@@ -36,7 +42,11 @@ function PricingPage() {
                 {tier.price === 0 ? localized.name : `€${tier.price}${t(lang, "pricing_mo")}`}
               </p>
               {tier.price > 0 && (
-                <p className="mt-1 text-sm text-muted">€{tier.annualPrice}{lang === "fr" ? " / an" : lang === "nl" ? " / jaar" : " / year"}</p>
+                <div className="mt-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2">
+                  <p className="font-medium">€{tier.annualPrice}{annualLabel.label}</p>
+                  <p className="text-sm font-medium">{annualLabel.save}</p>
+                  <p className="text-xs text-muted">€{(tier.price * 12).toFixed(2)} {annualLabel.equivalent}</p>
+                </div>
               )}
               <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
                 {localized.features.map((feature) => (
