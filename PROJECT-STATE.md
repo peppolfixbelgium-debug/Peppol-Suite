@@ -13,11 +13,10 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `df71e311767647865017dcb3ee7f96b02e126dd9`.** This is the latest verified code checkpoint after fixing React purity lint in the CEO Command Center.
-- CI #170 (`34976309332`) failed only at lint because `src/routes/command-center.tsx` called `Date.now()` during render and synchronously invoked refresh from an effect.
-- Fixed in `df71e311...`: stable initial refresh timestamp state and deferred initial refresh through a timer; periodic refresh remains every 60 seconds.
-- CI #171 (`34978990682`) completed SUCCESS for `df71e311...`: migrations 001/002/003, typecheck, lint, build, regression, OAuth/security, auth regression, Vercel adapters, bulk history, freemium product, quota, and Stripe test-mode all passed.
-- Added a client-side CSV export of the signed-in conversion history in `src/routes/dashboard.tsx` (`0009daa...`). This exposes metadata already displayed by the authenticated history view without adding a server-side data collection path. It is a conversion-history export capability, not a claim that the full GDPR portability/deletion workflow is complete.
+- **Current `main`: `9a2365d883ee44d08e14b7dd0d0c36229ee15863`.** This adds a factual Privacy-page correction aligning the notice with the already-implemented authenticated conversion-history CSV export.
+- CI #171 (`34978990682`) completed SUCCESS for the preceding code checkpoint `df71e311...`: migrations 001/002/003, typecheck, lint, build, regression, OAuth/security, auth regression, Vercel adapters, bulk history, freemium product, quota, and Stripe test-mode all passed.
+- The docs checkpoint `b71bf4aa...` was followed by this privacy consistency fix; a fresh CI result for `9a2365d...` is required before treating this latest main commit as fully verified.
+- Signed-in users can export conversion-history metadata as CSV from `src/routes/dashboard.tsx` (`0009daa...`). The Privacy page now states this capability accurately and distinguishes it from account/conversion deletion or full GDPR portability.
 - Parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
 - Converter UX explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - Bulk conversion reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
@@ -48,7 +47,8 @@ Last updated: 2026-09-15
 - **RED:** launch blocker.
 - Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
 - Privacy page readability was hardened internally; this does not constitute professional legal review.
-- Conversion-history CSV export is now available for authenticated users, but deletion, full-account export, retention and rights-request operations remain open and require further product/legal work.
+- Conversion-history CSV export is available for authenticated users. It is limited to dashboard history metadata; uploaded PDFs and generated XML bodies are not stored in the account database. Deletion, full-account export, retention and rights-request operations remain open and require further product/legal work.
+- The Privacy page was corrected on `9a2365d...` so its deletion/export section no longer falsely says there is no export control.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
