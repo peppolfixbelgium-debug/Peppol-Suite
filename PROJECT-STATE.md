@@ -13,10 +13,12 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `a795aae29ac81b74f4e0658b7db61a3bb205976b`**, explicit invoice-line extraction hardening after CI #145 exposed a BPOST regression where the line item was present but its line total was blank.
-- CI #145 on `665944d8862eb2595a811e670432524de5c367e9` failed only in `test:regression`; migrations, typecheck, lint and build passed. The failure was `bpost.lines[0].lineTotal === ""` instead of `100.00`.
-- Fix `a795aae29ac81b74f4e0658b7db61a3bb205976b` makes the explicit `Description` + `Amount excl VAT` extraction path authoritative before generic line parsing, ensuring the deterministic BPOST fixture produces a complete line with `100.00` line total.
-- **Verification gate:** GitHub currently exposes no workflow run for `a795aae29ac81b74f4e0658b7db61a3bb205976b`; this state update intentionally triggers the repository's push CI so the fix can be independently verified. Do not claim GREEN until that run completes successfully.
+- **Current `main`: `3a3a7deb5bd843d87949f3bc9dd24c0974a12ed7`**, following deterministic invoice-line extraction hardening, payable-total extraction hardening, freemium regression-test correction, and a legal copy correction.
+- CI #151 on `4bb9872168c69dc1fcd5d7e32bd3b49874c74203` independently verified the parser regression suite and all preceding gates, then failed at `test:freemium-product` on a brittle test assertion requiring `if(conversionSaved)` without allowing normal whitespace. The production converter code itself contains the guarded `if (conversionSaved)` path.
+- Fix `5477b475a3aa193e1f1d3143e115f616ec64787a` made the explicit `Description` + `Amount excl VAT` line path deterministic and verified by the same CI run: `test:regression` passed, as did OAuth security, auth, Vercel API, usage/conversion adapters and bulk-history regression suites.
+- Fix `9f9b6a3851f01a1b7fe2a67a05b86e62140c8889` corrected the freemium regression assertion to accept normal TypeScript formatting: `/if\s*\(\s*conversionSaved\s*\)/`. CI #153 was created for that exact SHA but failed before test execution because the GitHub runner stalled during container initialization; no product-test result was inferred from that infrastructure failure.
+- Fix `3a3a7deb5bd843d87949f3bc9dd24c0974a12ed7` removes an unverified legal claim from the Terms draft about a specific 2026 B2B mandate and replaces it with a neutral statement that applicable Belgian/EU invoicing rules must be followed. This is an internal copy-safety fix, not professional legal approval.
+- **Verification gate:** `main` is not GREEN. CI #153 is a verified infrastructure-stall failure and the latest Terms commit has no independently completed CI run yet. Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
 - Prior converter UX hardening remains on main: explicit PASS/FAIL/NOT CHECKED, rejection of empty/non-PDF/unreadable/non-invoice-looking uploads, invoice-date-before-number handling and integer amount extraction.
 - Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
 
@@ -30,7 +32,7 @@ Last updated: 2026-09-15
 - OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced.
 - Converter explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - PDF extraction limits remain 20 MB / 50 pages; scanned PDFs without extractable text are rejected with an explicit message rather than being treated as empty invoice data.
-- Parser regression coverage includes invoice-date-before-number, integer amount extraction and split-label invoice/purchase-order extraction.
+- Parser regression coverage includes invoice-date-before-number, integer amount extraction and split-label invoice/purchase-order extraction, plus the deterministic BPOST Description/Amount-excl-VAT fixture.
 - **P0 evidence gap:** production 3-PDF + bulk-ZIP real-browser E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
 - Issues #34/#36 explicitly document environment limitations: the available connector cannot perform the complete authenticated browser upload flow with the user's local PDF/ZIP and authenticated browser cookie. Do not fabricate PASS from API-only checks.
 - No full production READY claim until these are independently evidenced.
@@ -78,7 +80,7 @@ Last updated: 2026-09-15
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Finish CI verification on `a795aae29ac81b74f4e0658b7db61a3bb205976b` and independently verify its production deployment.
+1. Finish CI verification on current `main` and independently verify its production deployment.
 2. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification using independently available evidence; obtain/execute real-browser sample pack when environment permits.
 3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
 4. Pricing/Product: verify production pricing against Founder-approved baseline.
