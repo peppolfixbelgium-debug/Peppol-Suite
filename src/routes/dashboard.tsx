@@ -55,12 +55,24 @@ function Dashboard() {
   const [rows, setRows] = useState<ConversionRow[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [daysUntilReset, setDaysUntilReset] = useState(1);
 
   useEffect(() => {
     if (!user) return;
     void listConversions().then(setRows).catch(() => setRows([]));
     void fetch("/api/usage", { credentials: "include" }).then(async (response) => { if (!response.ok) throw new Error("Unable to load usage."); return response.json() as Promise<Usage>; }).then(setUsage).catch(() => setUsage(null));
   }, [user]);
+
+  useEffect(() => {
+    const updateResetCountdown = () => {
+      const now = new Date();
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      setDaysUntilReset(Math.max(1, Math.ceil((nextMonth.getTime() - now.getTime()) / 86400000)));
+    };
+    updateResetCountdown();
+    const timer = window.setInterval(updateResetCountdown, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function handleDeleteHistory() {
     if (!window.confirm("Delete your conversion history? This removes the saved history metadata for your account and cannot be undone.")) return;
@@ -70,7 +82,6 @@ function Dashboard() {
 
   const displayPlan = useMemo(() => user ? planName(user.planId) : "Free", [user]);
   const tier = useMemo(() => user ? planDetails(user.planId) : PRICING.tiers[0], [user]);
-  const daysUntilReset = Math.max(1, Math.ceil((new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).getTime() - Date.now()) / 86400000));
   const hasUsedSomething = Boolean(usage && (usage.conversions.used > 0 || usage.bulk.used > 0));
   const isFree = displayPlan === "Free";
 
