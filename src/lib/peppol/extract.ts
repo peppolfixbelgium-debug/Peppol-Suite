@@ -26,7 +26,7 @@ function firstAdjacentLabelValue(text: string, label: RegExp, value: RegExp): { 
 
 const INVOICE_NO_PATTERNS = [
   /\b(INV[-/]\d{2,4}[-/]?\d{2,})\b/i,
-  /(?:factuurnummer|factuurnr\.?|invoice\s*(?:number|no\.?|#)|n[°oº]\s*(?:de\s*)?facture|num[eé]ro\s*(?:de\s*)?facture)\s*[:#\.\-]?\s*([A-Z0-9][A-Z0-9/_-]{2,})/i,
+  /(?:factuurnummer|factuurnr\.?|invoice\s*(?:number|no\.?|#)|n[°oº]\s*(?:de\s*)?facture|num[eé]ro\s*(?:de\s*)?facture)\s*[:#.\-]?\s*([A-Z0-9][A-Z0-9/_-]{2,})/i,
 ];
 const ISSUE_DATE_PATTERNS = [/(?:factuurdatum|invoice\s*date|issue\s*date|date\s*(?:de\s*)?facture|(?<!verval)\bdate)\s*[:.]?\s*(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/i];
 const DUE_DATE_PATTERNS = [/(?:vervaldatum|due\s*date|date\s*[eé]ch[eé]ance|[eé]ch[eé]ance|betaaldatum|payment\s*due)\s*[:.]?\s*(\d{1,2}[./-]\d{1,2}[./-]\d{4}|\d{4}-\d{2}-\d{2})/i];
@@ -36,7 +36,7 @@ const PAYMENT_REF_PATTERNS = [/(?:payment\s*reference|gestructureerde\s*mededeli
 const IBAN_PATTERNS = [/\b([A-Z]{2}\d{2}[A-Z0-9]{11,30})\b/gi];
 const VAT_PATTERN = /\b(?:BTW|TVA|VAT|BE)\s*:?[\s./-]*(BE)?([0-9]{3,4}[\s./-]?[0-9]{3}[\s./-]?[0-9]{3})\b/gi;
 const NET_PATTERNS = [/(?:subtotaal(?:\s*excl\.?\s*btw)?|subtotal(?:\s*excl\.?\s*vat)?|hors\s*tva|net\s*(?:amount|total)|totaal\s*excl|netto(?:\s*totaal|\s*bedrag)?)/i];
-const VAT_AMT_PATTERNS = [/^\s*(?:btw|tva|vat)(?:\s+\d{1,2}\s*%)?\s*[:.-]?/i];
+const VAT_AMT_PATTERNS = [/^\s*(?:btw|tva|vat)(?:(?:\s+\d{1,2}\s*%)|\s*[:.-])/i];
 const PAY_PATTERNS = [/(?:totaal\s*te\s*betalen|total\s*(?:due|payable|te\s*betalen)|montant\s*[aà]\s*payer|grand\s*total|te\s*betalen|amount\s*due)/i];
 
 function collectVats(text: string): string[] {
