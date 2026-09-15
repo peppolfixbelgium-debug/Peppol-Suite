@@ -18,6 +18,13 @@ export async function listConversions(): Promise<ConversionRow[]> {
   return Array.isArray(data.conversions) ? data.conversions : [];
 }
 
+export async function deleteConversionHistory(): Promise<number> {
+  const response = await fetch("/api/conversions", { method: "DELETE", credentials: "include" });
+  const result = await response.json().catch(() => ({})) as { deletedCount?: number; error?: string };
+  if (!response.ok) throw new Error(typeof result.error === "string" ? result.error : "Unable to delete conversion history.");
+  return Number(result.deletedCount ?? 0);
+}
+
 export async function saveConversion(_userId: string, data: Omit<ConversionRow, "id" | "created_at">): Promise<ConversionRow> {
   const response = await fetch("/api/conversions", { method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...data, kind: "conversion", issue_count: data.issue_count ?? 0 }) });
   const result = await response.json().catch(() => ({}));
