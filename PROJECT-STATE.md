@@ -13,10 +13,10 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `e1bf4301bb59abd644e5e6ba9c234968b894034e`**, parser fix preventing a split `Purchase order` label from being captured as its own value.
-- CI #137 on `fa429b866c3daeac0b171ed8a2b5e758711719c0` failed only in `test:regression`; typecheck, lint and build passed. The failure exposed the generic `po` alternative matching the start of `purchase` and returning label text.
-- Fix `e1bf4301bb59abd644e5e6ba9c234968b894034e` adds word boundaries and same-line whitespace for purchase-order matching while retaining adjacent-label fallback for split PDF text.
-- CI #138 is queued on the exact fix SHA; do not claim full GREEN until it completes.
+- **Current `main`: `a795aae29ac81b74f4e0658b7db61a3bb205976b`**, explicit invoice-line extraction hardening after CI #145 exposed a BPOST regression where the line item was present but its line total was blank.
+- CI #145 on `665944d8862eb2595a811e670432524de5c367e9` failed only in `test:regression`; migrations, typecheck, lint and build passed. The failure was `bpost.lines[0].lineTotal === ""` instead of `100.00`.
+- Fix `a795aae29ac81b74f4e0658b7db61a3bb205976b` makes the explicit `Description` + `Amount excl VAT` extraction path authoritative before generic line parsing, ensuring the deterministic BPOST fixture produces a complete line with `100.00` line total.
+- CI verification for `a795aae29ac81b74f4e0658b7db61a3bb205976b` is pending; do not claim GREEN until it completes successfully.
 - Prior converter UX hardening remains on main: explicit PASS/FAIL/NOT CHECKED, rejection of empty/non-PDF/unreadable/non-invoice-looking uploads, invoice-date-before-number handling and integer amount extraction.
 - Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
 
@@ -78,7 +78,7 @@ Last updated: 2026-09-15
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Finish CI verification on `e1bf4301bb59abd644e5e6ba9c234968b894034e` and independently verify its production deployment.
+1. Finish CI verification on `a795aae29ac81b74f4e0658b7db61a3bb205976b` and independently verify its production deployment.
 2. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification using independently available evidence; obtain/execute real-browser sample pack when environment permits.
 3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
 4. Pricing/Product: verify production pricing against Founder-approved baseline.
