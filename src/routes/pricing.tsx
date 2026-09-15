@@ -18,9 +18,9 @@ function PricingPage() {
     nl: "Door de oprichter goedgekeurde lanceringstarieven. Betalingen zijn nog niet ingeschakeld.",
   } as const;
   const copy = {
-    en: { monthly: "Monthly", annual: "Annual", save: "Save 16.7%", effective: "effective / month", year: "year", month: "month" },
-    fr: { monthly: "Mensuel", annual: "Annuel", save: "Économisez 16,7 %", effective: "effectif / mois", year: "an", month: "mois" },
-    nl: { monthly: "Maandelijks", annual: "Jaarlijks", save: "Bespaar 16,7%", effective: "effectief / maand", year: "jaar", month: "maand" },
+    en: { monthly: "Monthly", annual: "Annual", save: "Save 16.7%", saveYear: "Save", effective: "effective / month", year: "year", month: "month", billingPeriod: "Billing period" },
+    fr: { monthly: "Mensuel", annual: "Annuel", save: "Économisez 16,7 %", saveYear: "Économisez", effective: "effectif / mois", year: "an", month: "mois", billingPeriod: "Période de facturation" },
+    nl: { monthly: "Maandelijks", annual: "Jaarlijks", save: "Bespaar 16,7%", saveYear: "Bespaar", effective: "effectief / maand", year: "jaar", month: "maand", billingPeriod: "Facturatieperiode" },
   } as const;
 
   return (
@@ -29,7 +29,7 @@ function PricingPage() {
       <p className="mt-3 max-w-2xl text-muted">{t(lang, "pricing_sub")}</p>
       <p className="mt-4 max-w-2xl text-sm text-muted">{notice[lang]}</p>
 
-      <div className="mx-auto mt-8 flex w-fit rounded-full border border-border bg-elevated p-1" aria-label="Billing period">
+      <div className="mx-auto mt-8 flex w-fit rounded-full border border-border bg-elevated p-1" aria-label={copy[lang].billingPeriod}>
         {(["month", "year"] as const).map((value) => {
           const active = interval === value;
           return <button key={value} type="button" aria-pressed={active} onClick={() => setInterval(value)} className={cn("rounded-full px-5 py-2 text-sm font-medium transition", active ? "bg-accent text-accent-foreground" : "text-muted hover:text-foreground")}>
@@ -48,7 +48,7 @@ function PricingPage() {
           return <div key={tier.id} className={cn("flex flex-col rounded-2xl border bg-elevated p-5", tier.popular ? "border-accent" : "border-border")}>
             <h2 className="font-medium">{localized.name}</h2>
             <p className="mt-3 font-display text-2xl">{tier.price === 0 ? localized.name : <>€{displayPrice}<span className="text-base font-normal"> / {interval === "year" ? copy[lang].year : copy[lang].month}</span></>}</p>
-            {tier.price > 0 && interval === "year" && <div className="mt-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2"><p className="font-medium">{copy[lang].save} €{annualSaving}</p><p className="text-sm text-muted">€{annualEffective} {copy[lang].effective}</p></div>}
+            {tier.price > 0 && interval === "year" && <div className="mt-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2"><p className="font-medium">{copy[lang].save} · {copy[lang].saveYear} €{annualSaving}/{copy[lang].year}</p><p className="text-sm text-muted">€{annualEffective} {copy[lang].effective}</p></div>}
             {tier.price > 0 && interval === "month" && <p className="mt-2 text-sm text-muted">€{tier.annualPrice} / {copy[lang].year} — {copy[lang].save}</p>}
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">{localized.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
             <Button asChild className="mt-6" variant={tier.popular ? "default" : "outline"}><a href={loginPath}>{localized.cta}</a></Button>
