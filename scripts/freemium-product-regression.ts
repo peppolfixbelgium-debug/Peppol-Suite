@@ -11,6 +11,8 @@ const usageApi = readFileSync("api/usage.ts", "utf8");
 const pricingSource = readFileSync("src/lib/peppol/pricing.ts", "utf8");
 const pricingPageSource = readFileSync("src/routes/pricing.tsx", "utf8");
 const privacySource = readFileSync("src/routes/privacy.tsx", "utf8");
+const stripeSource = readFileSync("api/_lib/stripe.ts", "utf8");
+const checkoutSource = readFileSync("api/stripe/checkout.ts", "utf8");
 const entitlementMigration = readFileSync("migrations/003_align_plan_entitlements.sql", "utf8");
 
 assert.match(quotaSource, /ANONYMOUS_TRIAL_LIMIT = 3/, "Anonymous trial target must be explicit and local-only");
@@ -43,6 +45,9 @@ assert.match(bulkSource, /uniqueFilename/, "Duplicate output filenames must not 
 assert.match(pricingSource, /id: \"free\"/, "Free tier must remain present");
 assert.match(pricingSource, /id: \"pro\"/, "Pro tier must be represented by the actual product tier");
 assert.match(pricingSource, /id: \"business\"/, "Business tier must be represented by the actual product tier");
+assert.match(pricingSource, /price: 14\.9,\s*annualPrice: 149/, "Approved Pro pricing must remain €14.90 monthly / €149 annual");
+assert.match(pricingSource, /price: 44\.9,\s*annualPrice: 449/, "Approved Business pricing must remain €44.90 monthly / €449 annual");
+assert.match(pricingSource, /annualDiscountPercent: 16\.7/, "Approved paid-tier annual discount must remain 16.7%");
 assert.doesNotMatch(pricingSource, /price: (19|49|99)/, "Unfinalized paid prices must not be published");
 assert.match(pricingPageSource, /tier\.localized\[lang\]/, "Pricing tier content must follow the selected language");
 assert.match(pricingPageSource, /notice\[lang\]/, "Pricing notice must follow the selected language");
@@ -60,6 +65,12 @@ assert.match(pricingSource, /nl: \{ name: \"Gratis\"/, "Dutch pricing tier label
 assert.match(entitlementMigration, /monthly_conversion_limit = 5, monthly_bulk_limit = 0/, "Free must have 5 document units and no bulk allowance");
 assert.match(entitlementMigration, /monthly_conversion_limit = 100, monthly_bulk_limit = 500/, "Legacy paid plan must match approved Pro entitlements");
 assert.match(entitlementMigration, /monthly_conversion_limit = 1000, monthly_bulk_limit = 10000/, "Business entitlements must match approved pricing");
+assert.match(stripeSource, /export function assertTestMode/, "Stripe checkout must retain an explicit test-mode guard");
+assert.match(stripeSource, /if \(stripeMode\(\) !== \"test\"\)/, "Stripe live keys must be rejected by checkout and portal session creation");
+assert.match(checkoutSource, /requireSameOrigin\(request\)/, "Stripe checkout must require same-origin protection");
+assert.match(checkoutSource, /Authentication required\./, "Stripe checkout must require an authenticated user");
+assert.match(checkoutSource, /input\.plan !== \"pro\" && input\.plan !== \"business\"/, "Stripe checkout must accept only approved paid plans");
+assert.match(checkoutSource, /input\.interval !== \"month\" && input\.interval !== \"year\"/, "Stripe checkout must accept only monthly or annual cadence");
 assert.match(privacySource, /Google or with email and password/, "Privacy page must describe current authentication accurately");
 assert.match(privacySource, /Microsoft and itsme/, "Future sign-in providers must be clearly described as planned");
 assert.match(privacySource, /browser.*PDF|PDF.*browser/i, "Privacy page must describe browser-side PDF processing");
