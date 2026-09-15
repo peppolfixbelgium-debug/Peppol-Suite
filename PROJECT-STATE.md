@@ -13,15 +13,13 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: privacy-readability hardening plus regression-test compatibility fix, `5a75d173c84d1a879c0f29c3e1856d25a80529b9`.**
-- CI #157 (`34953287306`) completed SUCCESS on the preceding verified main checkpoint `4b7136e7d2efc3e459c3523ca6750a8ec7e7eec9`.
-- CI #159 (`34954399824`) verified the privacy change itself through typecheck, lint, build, core regression, auth, Vercel adapters and bulk-history; it failed only in `test:freemium-product` because its storage assertion did not allow JSX whitespace wrapping.
-- Fixed that regression assertion in `scripts/freemium-product-regression.ts` at `5a75d173c84d1a879c0f29c3e1856d25a80529b9` using whitespace-tolerant matching; this preserves the behavioral assertion without weakening the required storage claim.
-- CI for `5a75d173...` is now the verification gate; do not claim GREEN until it completes successfully.
-- Recent parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
-- Converter UX on main explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
+- **Current `main`: `a4bd8e8236ef349aa2f07b6549301b2bf223ab0f` (`docs: record privacy regression assertion fix`).**
+- **CI #161 (`34959619619`) completed SUCCESS on the exact current `main` SHA.** All validation steps passed: migrations 001/002/003, typecheck, lint, build, core regression, OAuth security/auth regression, Vercel adapters, bulk history, freemium product, quota, and Stripe test-mode regression.
+- Parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
+- Converter UX explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - Bulk conversion reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
-- Production deployment must still be independently verified against the latest verified SHA before declaring production GREEN.
+- Privacy readability was hardened without changing substantive privacy claims; the regression assertion was made whitespace-tolerant without weakening the storage claim.
+- Production deployment must still be independently verified against the latest verified SHA before declaring production GREEN; the Vercel connector is currently unavailable for a fresh deployment check.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -29,13 +27,12 @@ Last updated: 2026-09-15
 - Claims/legal-surface consistency is a mandatory quality gate: implementation ↔ production behavior ↔ product copy ↔ Terms ↔ Privacy ↔ Security.
 
 ## Product / Engineering / Production QA
-- **AMBER:** core auth/conversion/bulk/freemium foundation remains supported by merged PRs #18/#19/#20 and quota-concurrency regression work.
-- OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced.
+- **AMBER:** repository implementation and deterministic CI are currently strong, but production evidence remains incomplete.
+- OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced. Obsolete PR #8 is closed and must not be reopened or merged.
 - PDF extraction limits remain 20 MB / 50 pages; scanned PDFs without extractable text are rejected with an explicit message.
 - **P0 evidence gap:** production 3-PDF + bulk-ZIP real-browser E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
 - Issues #34/#36 explicitly document environment limitations: the available connector cannot perform the complete authenticated browser upload flow with the user's local PDF/ZIP and authenticated browser cookie. Do not fabricate PASS from API-only checks.
-- User-provided production screenshots show successful extraction of the synthetic Belgian invoice fields and UBL XML generation; bulk screenshots still need a fresh production run against the latest deployment to prove current production behavior.
-- Vercel deployment SHA could not be freshly independently checked in the latest HQ run because the Vercel connector is currently unavailable.
+- User-provided production screenshots show successful extraction of synthetic Belgian invoice fields and UBL XML generation; bulk screenshots require a fresh production run against the current deployment to prove current behavior.
 - No full production READY claim until independent production evidence is current.
 
 ## Production entitlements
@@ -47,7 +44,7 @@ Last updated: 2026-09-15
 ## Legal / GDPR
 - **RED:** launch blocker.
 - Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
-- Privacy page readability was hardened internally on `b14df28...`; the regression test compatibility fix does not change substantive privacy claims and does not constitute professional legal review.
+- Privacy page readability was hardened internally; this does not constitute professional legal review.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
