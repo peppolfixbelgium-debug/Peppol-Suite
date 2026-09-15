@@ -19,6 +19,10 @@ const source = readFileSync("api/conversions.ts", "utf8");
 assert.match(source, /WITH quota AS/, "Authenticated conversion quota must be atomic with history persistence");
 assert.match(source, /WHERE usage_quota\.conversions_used < \$\{limit\}/, "Authenticated conversion quota must stop at the plan limit");
 assert.match(source, /INSERT INTO conversions/, "Successful conversions must be recorded in history");
+assert.match(source, /input\.kind === "bulk"/, "Bulk records must use a distinct quota path");
+assert.match(source, /SET bulk_used = usage_quota\.bulk_used \+ 1/, "Each successful bulk document must consume one bulk document unit");
+assert.match(source, /WHERE usage_quota\.bulk_used < \$\{limit\}/, "Bulk document quota must stop at the plan limit");
+assert.match(source, /Monthly bulk document limit reached/, "Bulk quota exhaustion must return an explicit document-limit error");
 
 const databaseUrl = process.env.DATABASE_URL;
 assert.ok(databaseUrl, "DATABASE_URL is required for quota regression");
@@ -66,6 +70,45 @@ BEGIN
   SELECT count(*)::int INTO rows_count FROM conversions WHERE user_id=(SELECT id FROM users WHERE email='quota-regression@example.test');
   IF used <> 5 OR rows_count <> 1 THEN RAISE EXCEPTION 'quota/history atomic semantics failed: used=%, rows=%', used, rows_count; END IF;
 END $$;
+
+DO $$
+DECLARE uid uuid; first_count integer; second_count integer; bulk_used integer;
+BEGIN
+  SELECT id INTO uid FROM users WHERE email = 'quota-regression@example.test';
+  UPDATE usage_quota SET conversions_used = 5, bulk_used = 4 WHERE user_id = uid AND period_start = date_trunc('month', current_date)::date;
+
+  WITH quota AS (
+    INSERT INTO usage_quota (user_id, period_start, conversions_used, bulk_used)
+    VALUES (uid, date_trunc('month', current_date)::date, 0, 1)
+    ON CONFLICT (user_id, period_start) DO UPDATE
+      SET bulk_used = usage_quota.bulk_used + 1
+      WHERE usage_quota.bulk_used < 5
+    RETURNING bulk_used
+  ), inserted AS (
+    INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count)
+    SELECT uid, 'BULK-OK', 'Seller', 'Buyer', 12.00, 'EUR', 'ok', 0 FROM quota
+    RETURNING id
+  ) SELECT count(*) INTO first_count FROM inserted;
+  IF first_count <> 1 THEN RAISE EXCEPTION 'bulk document at remaining quota should succeed'; END IF;
+
+  WITH quota AS (
+    INSERT INTO usage_quota (user_id, period_start, conversions_used, bulk_used)
+    VALUES (uid, date_trunc('month', current_date)::date, 0, 1)
+    ON CONFLICT (user_id, period_start) DO UPDATE
+      SET bulk_used = usage_quota.bulk_used + 1
+      WHERE usage_quota.bulk_used < 5
+    RETURNING bulk_used
+  ), inserted AS (
+    INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count)
+    SELECT uid, 'BULK-BLOCKED', 'Seller', 'Buyer', 13.00, 'EUR', 'ok', 0 FROM quota
+    RETURNING id
+  ) SELECT count(*) INTO second_count FROM inserted;
+  IF second_count <> 0 THEN RAISE EXCEPTION 'bulk document at quota limit must be blocked'; END IF;
+
+  SELECT bulk_used INTO bulk_used FROM usage_quota WHERE user_id=uid AND period_start=date_trunc('month', current_date)::date;
+  IF bulk_used <> 5 THEN RAISE EXCEPTION 'bulk quota must count documents, got %', bulk_used; END IF;
+END $$;
+
 ROLLBACK;
 `;
 execFileSync("psql", ["-v", "ON_ERROR_STOP=1", "-X", "--no-psqlrc", "--dbname", databaseUrl], { input: sql, stdio: ["pipe", "inherit", "inherit"] });
