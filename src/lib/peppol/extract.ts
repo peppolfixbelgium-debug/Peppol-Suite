@@ -1,5 +1,5 @@
 import { EMPTY_INVOICE, type Confidence, type InvoiceData, type InvoiceField, type InvoiceLine } from "./types";
-import { moneyString, normalizeBeVat, parseAmount, toIsoDate } from "@/lib/utils";
+import { isValidIban, moneyString, normalizeBeVat, parseAmount, toIsoDate } from "@/lib/utils";
 
 function field(value: string, confidence: Confidence): InvoiceField { return { value, confidence }; }
 function firstMatch(text: string, patterns: RegExp[]): { value: string; confidence: Confidence } | null {
@@ -33,10 +33,9 @@ const DUE_DATE_PATTERNS = [/(?:vervaldatum|due\s*date|date\s*[eé]ch[eé]ance|[e
 const BUYER_REF_PATTERNS = [/(?:buyer\s*reference|buyer\s*ref\.?|referentie\s*(?:klant|koper)|klantreferentie|r[ée]f[ée]rence\s*(?:client|acheteur))\s*[:#.]?\s*([^\n]+)/i];
 const ORDER_REF_PATTERNS = [/(?:\bpurchase\s*order\b|\bpo\s*(?:number|no\.?|#)?|\border\s*(?:number|no\.?|#)|\bbestelbon\b|\bbon\s*de\s*commande\b)[ \t]*[:#.]?[ \t]*([A-Z0-9][A-Z0-9/_-]{1,})/i];
 const PAYMENT_REF_PATTERNS = [/(?:payment\s*reference|gestructureerde\s*mededeling|structured\s*communication|communication\s*structur[ée]e|mededeling)\s*[:#.]?\s*([^\n]+)/i];
-const IBAN_PATTERNS = [/\b([A-Z]{2}\d{2}[A-Z0-9]{11,30})\b/gi];
 const VAT_PATTERN = /\b(?:BTW|TVA|VAT|BE)\s*:?[\s./-]*(BE)?([0-9]{3,4}[\s./-]?[0-9]{3}[\s./-]?[0-9]{3})\b/gi;
 const NET_PATTERNS = [/(?:subtotaal(?:\s*excl\.?\s*btw)?|subtotal(?:\s*excl\.?\s*vat)?|amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|hors\s*tva|net\s*(?:amount|total)|totaal\s*excl|netto(?:\s*totaal|\s*bedrag)?)/i];
-const VAT_AMT_PATTERNS = [/^\s*(?:btw|tva|vat)(?:(?:\s+\d{1,2}\s*%)|\s*[:.-])/i];
+const VAT_LINE_PATTERN = /^\s*(?:btw|tva|vat)\b/i;
 const PAY_PATTERNS = [/(?:totaal\s*te\s*betalen|total\s*(?:due|payable|te\s*betalen)|total\s*[:.]|montant\s*[aà]\s*payer|grand\s*total|te\s*betalen|amount\s*due)/i];
 
 function collectVats(text: string): string[] {
@@ -72,6 +71,22 @@ function extractAmountAfter(text: string, patterns: RegExp[]): string {
   for (const line of text.split(/\n/)) {
     if (!patterns.some((p) => p.test(line))) continue;
     const nums = [...line.matchAll(/(?:€|EUR|\u20ac)?\s*(-?\d+(?:[.,\s]\d{3})*[.,]\d{2}|-?\d+(?:[.,]\d{3})?)/gi)];
+    const last = nums.at(-1)?.[1];
+    if (last) {
+      const parsed = parseAmount(last);
+      if (parsed !== null) return moneyString(parsed);
+    }
+  }
+  return "";
+}
+
+function extractVatAmount(text: string): string {
+  for (const line of text.split(/\n/)) {
+    if (!VAT_LINE_PATTERN.test(line)) continue;
+    if (/\b(?:number|nr|no|nummer)\b/i.test(line) || /\bBE\s*\d/i.test(line)) continue;
+    const tail = line.replace(/^\s*(?:btw|tva|vat)\b\s*(?:amount|bedrag|montant)?\s*[:.-]?\s*/i, "");
+    const nums = [...tail.matchAll(/(?:€|EUR)?\s*(-?\d+(?:[.,\s]\d{3})*[.,]\d{2}|-?\d+(?:[.,]\d{3})?)(?:\s*(?:EUR|€))?/gi)]
+      .filter((match) => !/^\s*%/.test(tail.slice(match.index! + match[0].length)));
     const last = nums.at(-1)?.[1];
     if (last) {
       const parsed = parseAmount(last);
@@ -136,8 +151,12 @@ function guessCurrency(text: string): InvoiceField {
   return field("EUR", "medium");
 }
 function collectIban(text: string): string {
-  const m = new RegExp(IBAN_PATTERNS[0].source, "i").exec(text.replace(/\s+/g, ""));
-  return m?.[1] ?? "";
+  const candidates = text.match(/\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]{2,4}){3,8}\b/gi) ?? [];
+  for (const candidate of candidates) {
+    const normalized = candidate.replace(/[\s-]/g, "").toUpperCase();
+    if (isValidIban(normalized)) return normalized;
+  }
+  return "";
 }
 
 export function extractInvoice(text: string): InvoiceData {
@@ -149,7 +168,7 @@ export function extractInvoice(text: string): InvoiceData {
   const due = firstMatch(clean, DUE_DATE_PATTERNS);
   const buyerReference = firstMatch(clean, BUYER_REF_PATTERNS); const orderReference = firstMatch(clean, ORDER_REF_PATTERNS) ?? firstAdjacentLabelValue(clean, /^(?:purchase\s*order|po\s*(?:number|no\.?|#)?|order\s*(?:number|no\.?|#)|bestelbon|bon\s*de\s*commande)\s*[:#.]?\s*$/i, /(?=[A-Z0-9/_-]*\d)\b([A-Z0-9][A-Z0-9/_-]{1,})\b/i); const paymentReference = firstMatch(clean, PAYMENT_REF_PATTERNS);
   const supplierLoc = extractCity(supplier); const customerLoc = extractCity(customer);
-  const net = extractAmountAfter(clean, NET_PATTERNS); const vatAmt = extractAmountAfter(clean, VAT_AMT_PATTERNS); const payable = extractAmountAfter(clean, PAY_PATTERNS); const lines = extractLines(clean);
+  const net = extractAmountAfter(clean, NET_PATTERNS); const vatAmt = extractVatAmount(clean); const payable = extractAmountAfter(clean, PAY_PATTERNS); const lines = extractLines(clean);
   const supplierName = extractName(supplier); const customerName = extractName(customer); const supplierStreet = extractStreet(supplier); const customerStreet = extractStreet(customer); const supplierCity = supplierLoc.city; const customerCity = customerLoc.city; const supplierPostal = supplierLoc.postal; const customerPostal = customerLoc.postal; const iban = collectIban(clean);
   return {
     ...EMPTY_INVOICE,
