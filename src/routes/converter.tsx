@@ -54,7 +54,8 @@ function ConverterPage() {
   const [quota, setQuota] = useState<QuotaState>({ used: 0, limit: 3, remaining: 3 });
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [tab, setTab] = useState<"pdf" | "fields" | "xml">("pdf");
-  const [conversionSaved, setConversionSaved] = useState(false);
+  const [conversionReady, setConversionReady] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [checked, setChecked] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +73,7 @@ function ConverterPage() {
     setData(extractInvoice(SAMPLE_INVOICE_TEXT));
     setFileName("sample-invoice.txt");
     setError(null);
-    setConversionSaved(false);
+    setConversionReady(false);
     setChecked(true);
     setTab("fields");
   }, []);
@@ -84,7 +85,7 @@ function ConverterPage() {
 
   async function onFile(file: File) {
     setError(null);
-    setConversionSaved(false);
+    setConversionReady(false);
     setProgress({ stage: "loading", page: 0, total: 0 });
     const extracted = await extractPdfText(file, setProgress);
     setProgress(null);
@@ -121,42 +122,60 @@ function ConverterPage() {
     }
   }
 
-  async function onDownload() {
-    if (!result.ok) {
-      setTab("fields");
-      setError("FAIL — fix all blocking compliance issues before downloading XML. No invalid invoice is exported.");
-      return;
-    }
-    if (conversionSaved) {
-      downloadBlob(suggestedFilename(data), new Blob([xml], { type: "application/xml;charset=utf-8" }));
-      return;
-    }
+  async function onConvert() {
+    if (!result.ok || conversionReady || converting) return;
     setError(null);
-    if (!user) {
-      if (quota.remaining <= 0) {
-        setError("Your anonymous trial quota is used up. Create a free account to continue.");
+    setConverting(true);
+    try {
+      if (!user) {
+        if (quota.remaining <= 0) {
+          setShowUpgrade(true);
+          setError("Your anonymous trial quota is used up. Create a free account to continue.");
+          return;
+        }
+        const next = consumeAnonymousQuota();
+        setQuota(next);
+        setConversionReady(true);
+        setTab("xml");
         return;
       }
-      const next = consumeAnonymousQuota();
-      setQuota(next);
-      downloadBlob(suggestedFilename(data), new Blob([xml], { type: "application/xml;charset=utf-8" }));
-      setConversionSaved(true);
-      return;
-    }
-    try {
-      await saveConversion(user.id, { invoice_id: data.invoiceNumber.value || "untitled", supplier: data.supplierName.value, customer: data.customerName.value, total: data.payableAmount.value, currency: data.currency.value, status: "ok", issue_count: result.issues.length });
-      const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
-      downloadBlob(suggestedFilename(data), blob);
-      setConversionSaved(true);
+
+      await saveConversion(user.id, {
+        invoice_id: data.invoiceNumber.value || "untitled",
+        supplier: data.supplierName.value,
+        customer: data.customerName.value,
+        total: data.payableAmount.value,
+        currency: data.currency.value,
+        status: "ok",
+        issue_count: result.issues.length,
+      });
+      setConversionReady(true);
+      setTab("xml");
       void fetchQuota().then(setQuota).catch(() => undefined);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unable to save conversion.";
+      const message = e instanceof Error ? e.message : "Unable to convert invoice.";
       if (/limit reached/i.test(message)) setShowUpgrade(true);
       setError(message);
+    } finally {
+      setConverting(false);
     }
   }
 
+  function onDownload() {
+    if (!conversionReady) {
+      setTab("fields");
+      setError("Convert the invoice first. Conversion usage is consumed when a successful conversion is prepared, not when XML is downloaded.");
+      return;
+    }
+    downloadBlob(suggestedFilename(data), new Blob([xml], { type: "application/xml;charset=utf-8" }));
+  }
+
   async function onCopy() {
+    if (!conversionReady) {
+      setTab("fields");
+      setError("Convert the invoice first. XML copy is available after the successful conversion is recorded.");
+      return;
+    }
     await navigator.clipboard.writeText(xml);
   }
 
@@ -202,26 +221,30 @@ function ConverterPage() {
             <h2 className="text-sm font-medium">{t(lang, "fields")}</h2>
             {checked ? (
               <span role="status" aria-live="polite" className={cn("rounded-full px-3 py-1 text-xs font-bold tracking-wide", result.ok ? "bg-accent text-accent-fg" : "bg-danger/10 text-danger")}>
-                {result.ok ? "PASS — READY" : `FAIL — ${blockingIssues} BLOCKING ${blockingIssues === 1 ? "CHECK" : "CHECKS"}`}
+                {result.ok ? (conversionReady ? "PASS — READY" : "PASS — REVIEW & CONVERT") : `FAIL — ${blockingIssues} BLOCKING ${blockingIssues === 1 ? "CHECK" : "CHECKS"}`}
               </span>
             ) : (
               <span role="status" className="rounded-full border border-border px-3 py-1 text-xs font-medium text-muted">NOT CHECKED</span>
             )}
           </div>
-          {checked ? <p className="mb-4 text-xs text-muted">{result.ok ? "All blocking Peppol checks pass. Review the fields before export." : "This invoice cannot be exported until the blocking checks are fixed."}</p> : null}
-          <InvoiceForm data={data} onChange={(next) => { setData(next); setConversionSaved(false); }} lang={lang} />
+          {checked ? <p className="mb-4 text-xs text-muted">{result.ok ? (conversionReady ? "Conversion recorded. You can now copy or download the XML." : "All blocking Peppol checks pass. Review the fields, then explicitly convert to consume one document unit.") : "This invoice cannot be converted until the blocking checks are fixed."}</p> : null}
+          <InvoiceForm data={data} onChange={(next) => { setData(next); setConversionReady(false); }} lang={lang} />
           <div className="mt-6"><h3 className="mb-2 text-sm font-medium">{t(lang, "issues")}</h3><IssuesList result={result} lang={lang} /></div>
         </section>
 
         <section className={cn("flex flex-col rounded-2xl border border-border bg-elevated p-4", tab !== "xml" && "hidden lg:block")}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-medium">{t(lang, "xml_preview")}</h2>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => void onCopy()}><Copy className="size-4" />{t(lang, "copy_xml")}</Button>
-              <Button type="button" size="sm" disabled={!result.ok} onClick={() => void onDownload()}><Download className="size-4" />{t(lang, "download_xml")}</Button>
+            <div>
+              <h2 className="text-sm font-medium">{t(lang, "xml_preview")}</h2>
+              <p className="mt-1 text-xs text-muted">Usage is counted when a successful conversion is explicitly prepared.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={!result.ok || conversionReady || converting} onClick={() => void onConvert()}>{converting ? <Loader2 className="size-4 animate-spin" /> : null}{converting ? "Converting…" : "Convert & prepare XML"}</Button>
+              <Button type="button" variant="outline" size="sm" disabled={!conversionReady} onClick={() => void onCopy()}><Copy className="size-4" />{t(lang, "copy_xml")}</Button>
+              <Button type="button" variant="outline" size="sm" disabled={!conversionReady} onClick={onDownload}><Download className="size-4" />{t(lang, "download_xml")}</Button>
             </div>
           </div>
-          <pre className="mt-3 max-h-[70vh] flex-1 overflow-auto rounded-xl bg-bg p-3 font-mono text-[11px] leading-relaxed text-fg">{xml}</pre>
+          <pre className={cn("mt-3 max-h-[70vh] flex-1 overflow-auto rounded-xl bg-bg p-3 font-mono text-[11px] leading-relaxed text-fg", !conversionReady && "opacity-40 select-none")} aria-label={conversionReady ? "Generated UBL XML" : "XML preview locked until conversion"}>{conversionReady ? xml : "XML will be available after you review the extracted fields and explicitly convert the invoice."}</pre>
         </section>
       </div>
 
