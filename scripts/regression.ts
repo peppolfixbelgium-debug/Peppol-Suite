@@ -32,6 +32,7 @@ BTW 21% 262.50
 Totaal te betalen EUR 1512.50`;
 
 const data = extractInvoice(sample);
+console.log("STANDARD DATA DEBUG", { invoiceNumber: data.invoiceNumber.value, buyerReference: data.buyerReference.value, lines: data.lines.length, net: data.netAmount.value, vat: data.vatAmount.value, payable: data.payableAmount.value, issues: validateInvoice(data).issues.map((i) => i.code) });
 assert.equal(data.lines.length, 2);
 assert.equal(data.buyerReference.value, "PO-2026-0412");
 assert.equal(data.lines[0].lineTotal, "1000.00");
