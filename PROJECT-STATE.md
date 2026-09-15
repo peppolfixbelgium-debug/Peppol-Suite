@@ -13,14 +13,15 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: privacy-readability hardening commit `b14df28a09e952f1df2230c3ca21325f3c211ab2`.**
+- **Current `main`: privacy-readability hardening plus regression-test compatibility fix, `5a75d173c84d1a879c0f29c3e1856d25a80529b9`.**
 - CI #157 (`34953287306`) completed SUCCESS on the preceding verified main checkpoint `4b7136e7d2efc3e459c3523ca6750a8ec7e7eec9`.
-- Latest product change improves the Privacy page reading experience with larger body text, increased line spacing, narrower readable content width, stronger section headings, and section anchors; no substantive privacy claims were added.
-- CI for `b14df28...` has not yet appeared; do not claim this latest change is CI-verified until a run completes.
+- CI #159 (`34954399824`) verified the privacy change itself through typecheck, lint, build, core regression, auth, Vercel adapters and bulk-history; it failed only in `test:freemium-product` because its storage assertion did not allow JSX whitespace wrapping.
+- Fixed that regression assertion in `scripts/freemium-product-regression.ts` at `5a75d173c84d1a879c0f29c3e1856d25a80529b9` using whitespace-tolerant matching; this preserves the behavioral assertion without weakening the required storage claim.
+- CI for `5a75d173...` is now the verification gate; do not claim GREEN until it completes successfully.
 - Recent parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
 - Converter UX on main explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - Bulk conversion reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
-- **Verification gate:** repository CI is green on the preceding verified checkpoint; latest privacy change remains pending independent CI verification. Production deployment must still be independently verified against the latest SHA before declaring production GREEN.
+- Production deployment must still be independently verified against the latest verified SHA before declaring production GREEN.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -46,7 +47,7 @@ Last updated: 2026-09-15
 ## Legal / GDPR
 - **RED:** launch blocker.
 - Mandatory audit includes: claim inventory; product-vs-promise verification; Terms; Privacy; Security; Cookie/consent; GDPR rights/deletion/export; retention; processors/subprocessors/DPA; liability/warranty/validation limitations; Peppol positioning; company identity/VAT/contact disclosures when known.
-- Privacy page readability was hardened internally on `b14df28...`; this improves UX presentation only and does not constitute professional legal review.
+- Privacy page readability was hardened internally on `b14df28...`; the regression test compatibility fix does not change substantive privacy claims and does not constitute professional legal review.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
