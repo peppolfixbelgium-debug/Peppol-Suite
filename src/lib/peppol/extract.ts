@@ -81,16 +81,31 @@ function extractAmountAfter(text: string, patterns: RegExp[]): string {
   return "";
 }
 
+function extractLabeledAmount(line: string): number | null {
+  const match = line.match(/(?:€|EUR)?\s*(-?\d+(?:[.,\s]\d{3})*[.,]\d{2}|-?\d+(?:[.,]\d{3})?)(?:\s*(?:EUR|€))?\s*$/i);
+  return match?.[1] ? parseAmount(match[1]) : null;
+}
+
 function explicitLine(text: string): InvoiceLine | null {
-  const description = firstMatch(text, [/(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*([^\n]+)/i]);
-  const amount = firstMatch(text, [/(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*(?:€|EUR)?\s*([0-9][0-9., ]*)/i]);
-  const adjacentDescription = description ?? firstAdjacentLabelValue(text, /^(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*$/i, /^(?!$)([^\n]+)$/i);
-  const adjacentAmount = amount ?? firstAdjacentLabelValue(text, /^(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*$/i, /(?:€|EUR)?\s*([0-9][0-9., ]*)/i);
-  const vat = text.match(/(?:vat|btw|tva)\s+(\d{1,2})\s*%/i);
-  if (!adjacentDescription?.value || !adjacentAmount?.value) return null;
-  const unit = parseAmount(adjacentAmount.value.replace(/\s+(?:EUR|€)\s*$/i, "").trim());
-  if (unit === null) return null;
-  return { description: adjacentDescription.value.replace(/\s+/g, " ").trim(), quantity: "1", unitCode: "C62", unitPrice: moneyString(unit), baseQuantity: "1", vatRate: vat?.[1] ?? "21", lineTotal: moneyString(unit), allowanceAmount: "0.00", chargeAmount: "0.00" };
+  const lines = text.split(/\n/).map((line) => line.trim()).filter(Boolean);
+  const descriptionIndex = lines.findIndex((line) => /^(?:description|omschrijving|d[ée]signation)\s*[:#]?/i.test(line));
+  if (descriptionIndex < 0) return null;
+
+  const descriptionLine = lines[descriptionIndex];
+  const inlineDescription = descriptionLine.replace(/^(?:description|omschrijving|d[ée]signation)\s*[:#]?\s*/i, "").trim();
+  const description = inlineDescription || lines[descriptionIndex + 1] || "";
+  if (!description) return null;
+
+  const amountIndex = lines.findIndex((line, index) => index > descriptionIndex && /^(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?/i.test(line));
+  if (amountIndex < 0) return null;
+
+  const amountLine = lines[amountIndex];
+  const inlineAmount = amountLine.replace(/^(?:amount\s*excl\.?\s*vat|bedrag\s*excl\.?\s*btw|montant\s*hors\s*tva|net\s*(?:amount|total))\s*[:#]?\s*/i, "").trim();
+  const amount = extractLabeledAmount(inlineAmount) ?? extractLabeledAmount(lines[amountIndex + 1] ?? "");
+  if (amount === null) return null;
+
+  const vat = lines.slice(amountIndex + 1, amountIndex + 4).join(" ").match(/(?:vat|btw|tva)\s*(?:[:#-]?\s*)?(\d{1,2})\s*%/i);
+  return { description: description.replace(/\s+/g, " ").trim(), quantity: "1", unitCode: "C62", unitPrice: moneyString(amount), baseQuantity: "1", vatRate: vat?.[1] ?? "21", lineTotal: moneyString(amount), allowanceAmount: "0.00", chargeAmount: "0.00" };
 }
 
 function extractLines(text: string): InvoiceLine[] {
@@ -144,10 +159,8 @@ export function extractInvoice(text: string): InvoiceData {
     currency: guessCurrency(clean),
     buyerReference: buyerReference ? field(buyerReference.value, buyerReference.confidence) : EMPTY_INVOICE.buyerReference,
     orderReference: orderReference ? field(orderReference.value, orderReference.confidence) : EMPTY_INVOICE.orderReference,
-    supplierName: field(supplierName, supplierName ? "high" : "low"), supplierVat: field(supplierVats[0] ?? "", supplierVats[0] ? "high" : "low"), supplierStreet: field(supplierStreet, supplierStreet ? "medium" : "low"), supplierCity: field(supplierCity, supplierCity ? "high" : "low"), supplierPostal: field(supplierPostal, supplierPostal ? "high" : "low"), supplierCountry: field(supplierLoc.country, "medium"),
-    customerName: field(customerName, customerName ? "high" : "low"), customerVat: field(customerVats[0] ?? "", customerVats[0] ? "high" : "low"), customerStreet: field(customerStreet, customerStreet ? "medium" : "low"), customerCity: field(customerCity, customerCity ? "high" : "low"), customerPostal: field(customerPostal, customerPostal ? "high" : "low"), customerCountry: field(customerLoc.country, "medium"),
-    netAmount: field(net, net ? "high" : "low"), vatAmount: field(vatAmt, vatAmt ? "medium" : "low"), payableAmount: field(payable, payable ? "high" : "low"), paymentAccount: field(iban, iban ? "high" : "low"), paymentReference: paymentReference ? field(paymentReference.value, paymentReference.confidence) : EMPTY_INVOICE.paymentReference, lines, notes: "",
+    supplierName: field(supplierName, supplierName ? "high" : "low"), supplierVat: field(supplierVats[0] ?? "", supplierVats[0] ? "high" : "low"), supplierStreet: field(supplierStreet, supplierStreet ? "medium" : "low"), supplierCity: field(supplierCity, supplierCity ? "medium" : "low"), supplierPostal: field(supplierPostal, supplierPostal ? "medium" : "low"), supplierCountry: field(supplierLoc.country, "medium"),
+    customerName: field(customerName, customerName ? "high" : "low"), customerVat: field(customerVats[0] ?? "", customerVats[0] ? "high" : "low"), customerStreet: field(customerStreet, customerStreet ? "medium" : "low"), customerCity: field(customerCity, customerCity ? "medium" : "low"), customerPostal: field(customerPostal, customerPostal ? "medium" : "low"), customerCountry: field(customerLoc.country, "medium"),
+    iban: field(iban, iban ? "high" : "low"), netAmount: field(net, net ? "high" : "low"), vatAmount: field(vatAmt, vatAmt ? "high" : "low"), payableAmount: field(payable, payable ? "high" : "low"), lines,
   };
 }
-
-export function setField<K extends keyof InvoiceData>(data: InvoiceData, key: K, value: InvoiceData[K]): InvoiceData { return { ...data, [key]: value }; }
