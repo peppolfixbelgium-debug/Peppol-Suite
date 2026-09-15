@@ -16,6 +16,11 @@ export const PRICING = {
         "Basic EN16931 validation",
         "XML download",
       ],
+      localized: {
+        en: { name: "Free", cta: "Start free", features: ["5 document units/month", "Browser-side PDF conversion", "Basic EN16931 validation", "XML download"] },
+        fr: { name: "Gratuit", cta: "Commencer gratuitement", features: ["5 unités de documents/mois", "Conversion PDF dans le navigateur", "Validation EN16931 de base", "Téléchargement XML"] },
+        nl: { name: "Gratis", cta: "Gratis starten", features: ["5 documenteenheden/maand", "Pdf-conversie in de browser", "Basisvalidatie volgens EN16931", "XML downloaden"] },
+      },
     },
     {
       id: "pro",
@@ -33,6 +38,11 @@ export const PRICING = {
         "Conversion history",
         "Full validation workflow",
       ],
+      localized: {
+        en: { name: "Pro", cta: "Start Pro", features: ["100 document units/month", "500 bulk document units/month", "Bulk ZIP conversion", "Conversion history", "Full validation workflow"] },
+        fr: { name: "Pro", cta: "Commencer Pro", features: ["100 unités de documents/mois", "500 unités de documents en lot/mois", "Conversion de ZIP en lot", "Historique des conversions", "Parcours complet de validation"] },
+        nl: { name: "Pro", cta: "Pro starten", features: ["100 documenteenheden/maand", "500 bulkdocumenteenheden/maand", "Bulkconversie van ZIP", "Conversiegeschiedenis", "Volledige validatieworkflow"] },
+      },
     },
     {
       id: "business",
@@ -50,6 +60,11 @@ export const PRICING = {
         "Conversion history",
         "API access",
       ],
+      localized: {
+        en: { name: "Business", cta: "Start Business", features: ["1,000 document units/month", "10,000 bulk document units/month", "Bulk ZIP conversion", "Conversion history", "API access"] },
+        fr: { name: "Business", cta: "Commencer Business", features: ["1 000 unités de documents/mois", "10 000 unités de documents en lot/mois", "Conversion de ZIP en lot", "Historique des conversions", "Accès API"] },
+        nl: { name: "Business", cta: "Business starten", features: ["1.000 documenteenheden/maand", "10.000 bulkdocumenteenheden/maand", "Bulkconversie van ZIP", "Conversiegeschiedenis", "API-toegang"] },
+      },
     },
   ],
 } as const;
