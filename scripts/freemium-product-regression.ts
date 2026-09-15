@@ -48,6 +48,13 @@ assert.match(pricingPageSource, /tier\.localized\[lang\]/, "Pricing tier content
 assert.match(pricingPageSource, /notice\[lang\]/, "Pricing notice must follow the selected language");
 assert.match(pricingPageSource, /pricing_mo/, "Pricing page must use the localized monthly label");
 assert.match(pricingPageSource, /annualPrice/, "Pricing page must expose the annual price while billing is still disabled");
+assert.match(pricingPageSource, /billingPeriod: \"Billing period\"/, "Pricing billing-period control must have an accessible label");
+assert.match(pricingPageSource, /billingPeriod: \"Période de facturation\"/, "French pricing billing-period control must be localized");
+assert.match(pricingPageSource, /billingPeriod: \"Facturatieperiode\"/, "Dutch pricing billing-period control must be localized");
+assert.match(pricingPageSource, /saveYear: \"Save\"/, "Annual savings copy must explicitly identify the savings amount");
+assert.match(pricingPageSource, /saveYear: \"Économisez\"/, "French annual savings copy must explicitly identify the savings amount");
+assert.match(pricingPageSource, /saveYear: \"Bespaar\"/, "Dutch annual savings copy must explicitly identify the savings amount");
+assert.match(pricingPageSource, /annualSaving\}\/<\{copy\[lang\]\.year\}/, "Annual savings must be expressed with an explicit annual unit");
 assert.match(pricingSource, /fr: \{ name: \"Gratuit\"/, "French pricing tier labels must be defined");
 assert.match(pricingSource, /nl: \{ name: \"Gratis\"/, "Dutch pricing tier labels must be defined");
 assert.match(entitlementMigration, /monthly_conversion_limit = 5, monthly_bulk_limit = 0/, "Free must have 5 document units and no bulk allowance");
