@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Activity, ArrowUpRight, CheckCircle2, CircleAlert, Clock3, GitCommitHorizontal, RefreshCw, ShieldAlert, XCircle } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/local";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,7 @@ type Issue = { number: number; title: string; state: "open" | "closed"; html_url
 type Run = { id: number; name: string; status: string; conclusion: string | null; head_sha: string; run_number: number; html_url: string; created_at: string };
 type Commit = { sha: string; html_url: string; commit: { message: string; author?: { date?: string } } };
 
-type Team = {
-  name: string;
-  issueNumbers: number[];
-  kind: "execution" | "external";
-  description: string;
-};
+type Team = { name: string; issueNumbers: number[]; kind: "execution" | "external"; description: string };
 
 const TEAMS: Team[] = [
   { name: "Engineering", issueNumbers: [23], kind: "execution", description: "Core product, conversion reliability and launch QA" },
@@ -92,7 +87,12 @@ function CommandCenter() {
     }
   }, []);
 
-  useEffect(() => { if (hydrated && user?.role === "admin") void refresh(); }, [hydrated, user, refresh]);
+  useEffect(() => {
+    if (!hydrated || user?.role !== "admin") return;
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [hydrated, user, refresh]);
 
   const latestRun = runs[0] ?? null;
   const openIssues = useMemo(() => issues.filter((i) => i.state === "open"), [issues]);
@@ -108,58 +108,21 @@ function CommandCenter() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-sm font-medium text-accent"><Activity className="size-4" />LIVE EXECUTION BOARD</div>
-          <h1 className="mt-2 font-display text-4xl tracking-tight">CEO Command Center</h1>
-          <p className="mt-2 max-w-2xl text-muted">GitHub is the execution engine. This board turns issues, CI and commits into a live view of what is moving, blocked or complete.</p>
-        </div>
+        <div><div className="flex items-center gap-2 text-sm font-medium text-accent"><Activity className="size-4" />LIVE EXECUTION BOARD</div><h1 className="mt-2 font-display text-4xl tracking-tight">CEO Command Center</h1><p className="mt-2 max-w-2xl text-muted">GitHub is the execution engine. This board turns issues, CI and commits into a live view of what is moving, blocked or complete.</p></div>
         <Button type="button" variant="outline" onClick={() => void refresh()} disabled={loading}><RefreshCw className={cn("size-4", loading && "animate-spin")} />Refresh</Button>
       </div>
 
-      <section className="mt-8 grid gap-3 sm:grid-cols-4">
-        <Metric label="MOVING" value={moving} icon={<Activity className="size-4" />} />
-        <Metric label="BLOCKED / GATED" value={blocked} icon={<CircleAlert className="size-4" />} />
-        <Metric label="DONE / GATED" value={completed} icon={<CheckCircle2 className="size-4" />} />
-        <Metric label="OPEN ISSUES" value={openIssues.length} icon={<Clock3 className="size-4" />} />
-      </section>
-
+      <section className="mt-8 grid gap-3 sm:grid-cols-4"><Metric label="MOVING" value={moving} icon={<Activity className="size-4" />} /><Metric label="BLOCKED / GATED" value={blocked} icon={<CircleAlert className="size-4" />} /><Metric label="DONE / GATED" value={completed} icon={<CheckCircle2 className="size-4" />} /><Metric label="OPEN ISSUES" value={openIssues.length} icon={<Clock3 className="size-4" />} /></section>
       {error ? <div className="mt-4 rounded-xl border border-border bg-elevated p-4 text-sm"><strong>Refresh failed.</strong> {error}</div> : null}
 
-      <section className="mt-8 rounded-2xl border border-border bg-elevated p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">CURRENT BOTTLENECK</p><h2 className="mt-1 font-display text-2xl">{failedRun ? "Repository CI failure" : "Production authenticated E2E"}</h2></div>
-          <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", failedRun ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-accent-soft text-accent")}>{failedRun ? "FIX NOW" : "EVIDENCE GAP"}</span>
-        </div>
-        <p className="mt-3 text-sm text-muted">{failedRun ? `CI #${failedRun.run_number} failed. Fix the failing job before treating main as green.` : "The board deliberately shows this as an evidence gap rather than inventing a browser-upload PASS."}</p>
-      </section>
+      <section className="mt-8 rounded-2xl border border-border bg-elevated p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">CURRENT BOTTLENECK</p><h2 className="mt-1 font-display text-2xl">{failedRun ? "Repository CI failure" : "Production authenticated E2E"}</h2></div><span className={cn("rounded-full px-3 py-1 text-xs font-semibold", failedRun ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-accent-soft text-accent")}>{failedRun ? "FIX NOW" : "EVIDENCE GAP"}</span></div><p className="mt-3 text-sm text-muted">{failedRun ? `CI #${failedRun.run_number} failed. Fix the failing job before treating main as green.` : "The board deliberately shows this as an evidence gap rather than inventing a browser-upload PASS."}</p></section>
 
-      <section className="mt-8">
-        <div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Team activity</h2><span className="text-xs text-muted">Refreshed {formatAge(new Date(refreshedAt).toISOString())}</span></div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {TEAMS.map((team) => {
-            const state = teamState(team, issues, latestRun);
-            const linked = team.issueNumbers.map((n) => issues.find((i) => i.number === n)).filter(Boolean) as Issue[];
-            return <article key={team.name} className="rounded-2xl border border-border bg-elevated p-4">
-              <div className="flex items-start justify-between gap-3"><div><h3 className="font-medium">{team.name}</h3><p className="mt-1 text-sm text-muted">{state.detail}</p></div><span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold", state.tone === "green" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : state.tone === "red" ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}><StatusIcon tone={state.tone} />{state.label}</span></div>
-              <div className="mt-4 flex flex-wrap gap-2">{linked.map((issue) => <a key={issue.number} href={issue.html_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-fg">#{issue.number} {issue.state === "open" ? "open" : "closed"}<ArrowUpRight className="size-3" /></a>)}</div>
-            </article>;
-          })}
-        </div>
-      </section>
+      <section className="mt-8"><div className="mb-3 flex items-center justify-between"><h2 className="font-display text-2xl">Team activity</h2><span className="text-xs text-muted">Auto-refresh: 60s · refreshed {formatAge(new Date(refreshedAt).toISOString())}</span></div><div className="grid gap-3 md:grid-cols-2">{TEAMS.map((team) => { const state = teamState(team, issues, latestRun); const linked = team.issueNumbers.map((n) => issues.find((i) => i.number === n)).filter(Boolean) as Issue[]; return <article key={team.name} className="rounded-2xl border border-border bg-elevated p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="font-medium">{team.name}</h3><p className="mt-1 text-sm text-muted">{state.detail}</p></div><span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold", state.tone === "green" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : state.tone === "red" ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}><StatusIcon tone={state.tone} />{state.label}</span></div><div className="mt-4 flex flex-wrap gap-2">{linked.map((issue) => <a key={issue.number} href={issue.html_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-fg">#{issue.number} {issue.state === "open" ? "open" : "closed"}<ArrowUpRight className="size-3" /></a>)}</div></article>; })}</div></section>
 
-      <section className="mt-8 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-elevated p-5">
-          <div className="flex items-center justify-between"><h2 className="font-display text-xl">CI / release pulse</h2>{latestRun ? <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", latestRun.conclusion === "success" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : latestRun.conclusion === "failure" ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{latestRun.conclusion ?? latestRun.status}</span> : null}</div>
-          {latestRun ? <a href={latestRun.html_url} target="_blank" rel="noreferrer" className="mt-4 block rounded-xl border border-border p-3 hover:bg-surface"><div className="flex items-center justify-between gap-3"><span className="font-medium">{latestRun.name} #{latestRun.run_number}</span><ArrowUpRight className="size-4 text-muted" /></div><p className="mt-1 font-mono text-xs text-muted">{latestRun.head_sha.slice(0, 12)} · {formatAge(latestRun.created_at)}</p></a> : <p className="mt-4 text-sm text-muted">No workflow data loaded.</p>}
-        </div>
-        <div className="rounded-2xl border border-border bg-elevated p-5"><h2 className="font-display text-xl">Recent commits</h2><div className="mt-4 space-y-2">{commits.slice(0, 6).map((commit) => <a key={commit.sha} href={commit.html_url} target="_blank" rel="noreferrer" className="flex gap-3 rounded-lg p-2 hover:bg-surface"><GitCommitHorizontal className="mt-0.5 size-4 shrink-0 text-muted" /><div className="min-w-0"><p className="truncate text-sm">{commit.commit.message.split("\n")[0]}</p><p className="mt-0.5 font-mono text-xs text-muted">{commit.sha.slice(0, 8)} · {commit.commit.author?.date ? formatAge(commit.commit.author.date) : "recent"}</p></div></a>)}</div></div>
-      </section>
-
+      <section className="mt-8 grid gap-4 lg:grid-cols-2"><div className="rounded-2xl border border-border bg-elevated p-5"><div className="flex items-center justify-between"><h2 className="font-display text-xl">CI / release pulse</h2>{latestRun ? <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", latestRun.conclusion === "success" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : latestRun.conclusion === "failure" ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300")}>{latestRun.conclusion ?? latestRun.status}</span> : null}</div>{latestRun ? <a href={latestRun.html_url} target="_blank" rel="noreferrer" className="mt-4 block rounded-xl border border-border p-3 hover:bg-surface"><div className="flex items-center justify-between gap-3"><span className="font-medium">{latestRun.name} #{latestRun.run_number}</span><ArrowUpRight className="size-4 text-muted" /></div><p className="mt-1 font-mono text-xs text-muted">{latestRun.head_sha.slice(0, 12)} · {formatAge(latestRun.created_at)}</p></a> : <p className="mt-4 text-sm text-muted">No workflow data loaded.</p>}</div><div className="rounded-2xl border border-border bg-elevated p-5"><h2 className="font-display text-xl">Recent commits</h2><div className="mt-4 space-y-2">{commits.slice(0, 6).map((commit) => <a key={commit.sha} href={commit.html_url} target="_blank" rel="noreferrer" className="flex gap-3 rounded-lg p-2 hover:bg-surface"><GitCommitHorizontal className="mt-0.5 size-4 shrink-0 text-muted" /><div className="min-w-0"><p className="truncate text-sm">{commit.commit.message.split("\n")[0]}</p><p className="mt-0.5 font-mono text-xs text-muted">{commit.sha.slice(0, 8)} · {commit.commit.author?.date ? formatAge(commit.commit.author.date) : "recent"}</p></div></a>)}</div></div></section>
       <p className="mt-6 text-xs text-muted">Data source: public GitHub repository state for {REPO}. Internal access is restricted to administrator accounts; this page never writes to GitHub.</p>
     </main>
   );
 }
 
-function Metric({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  return <div className="rounded-2xl border border-border bg-elevated p-4"><div className="flex items-center gap-2 text-muted">{icon}<span className="text-xs font-semibold tracking-wide">{label}</span></div><p className="mt-2 font-display text-3xl">{value}</p></div>;
-}
+function Metric({ label, value, icon }: { label: string; value: number; icon: ReactNode }) { return <div className="rounded-2xl border border-border bg-elevated p-4"><div className="flex items-center gap-2 text-muted">{icon}<span className="text-xs font-semibold tracking-wide">{label}</span></div><p className="mt-2 font-display text-3xl">{value}</p></div>; }
