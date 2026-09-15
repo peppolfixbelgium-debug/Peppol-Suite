@@ -72,7 +72,7 @@ BEGIN
 END $$;
 
 DO $$
-DECLARE uid uuid; first_count integer; second_count integer; bulk_used integer;
+DECLARE uid uuid; first_count integer; second_count integer; observed_bulk_used integer;
 BEGIN
   SELECT id INTO uid FROM users WHERE email = 'quota-regression@example.test';
   UPDATE usage_quota SET conversions_used = 5, bulk_used = 4 WHERE user_id = uid AND period_start = date_trunc('month', current_date)::date;
@@ -105,8 +105,8 @@ BEGIN
   ) SELECT count(*) INTO second_count FROM inserted;
   IF second_count <> 0 THEN RAISE EXCEPTION 'bulk document at quota limit must be blocked'; END IF;
 
-  SELECT bulk_used INTO bulk_used FROM usage_quota WHERE user_id=uid AND period_start=date_trunc('month', current_date)::date;
-  IF bulk_used <> 5 THEN RAISE EXCEPTION 'bulk quota must count documents, got %', bulk_used; END IF;
+  SELECT usage_quota.bulk_used INTO observed_bulk_used FROM usage_quota WHERE user_id=uid AND period_start=date_trunc('month', current_date)::date;
+  IF observed_bulk_used <> 5 THEN RAISE EXCEPTION 'bulk quota must count documents, got %', observed_bulk_used; END IF;
 END $$;
 
 ROLLBACK;
