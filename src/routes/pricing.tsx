@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PRICING } from "@/lib/peppol/pricing";
 import { t } from "@/lib/peppol/i18n";
@@ -6,18 +7,20 @@ import { usePrefs } from "@/lib/peppol/prefs";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pricing")({ component: PricingPage });
+type BillingInterval = "month" | "year";
 
 function PricingPage() {
   const lang = usePrefs((s) => s.lang);
+  const [interval, setInterval] = useState<BillingInterval>("year");
   const notice = {
     en: "Founder-approved launch pricing. Payments are not enabled yet.",
     fr: "Tarifs de lancement approuvés par le fondateur. Les paiements ne sont pas encore activés.",
     nl: "Door de oprichter goedgekeurde lanceringstarieven. Betalingen zijn nog niet ingeschakeld.",
   } as const;
-  const annual = {
-    en: { label: "/ year", save: "Save 16.7%", equivalent: "vs monthly" },
-    fr: { label: "/ an", save: "Économisez 16,7 %", equivalent: "vs mensuel" },
-    nl: { label: "/ jaar", save: "Bespaar 16,7%", equivalent: "vs maandelijks" },
+  const copy = {
+    en: { monthly: "Monthly", annual: "Annual", save: "Save 16.7%", effective: "effective / month", saved: "Save", year: "year", month: "month" },
+    fr: { monthly: "Mensuel", annual: "Annuel", save: "Économisez 16,7 %", effective: "effectif / mois", saved: "Économisez", year: "an", month: "mois" },
+    nl: { monthly: "Maandelijks", annual: "Jaarlijks", save: "Bespaar 16,7%", effective: "effectief / maand", saved: "Bespaar", year: "jaar", month: "maand" },
   } as const;
 
   return (
@@ -25,36 +28,49 @@ function PricingPage() {
       <h1 className="font-display text-4xl tracking-tight">{t(lang, "pricing_title")}</h1>
       <p className="mt-3 max-w-2xl text-muted">{t(lang, "pricing_sub")}</p>
       <p className="mt-4 max-w-2xl text-sm text-muted">{notice[lang]}</p>
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
+
+      <div className="mx-auto mt-8 flex w-fit rounded-full border border-border bg-elevated p-1" aria-label="Billing period">
+        {(["month", "year"] as const).map((value) => {
+          const active = interval === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setInterval(value)}
+              className={cn("rounded-full px-5 py-2 text-sm font-medium transition", active ? "bg-accent text-accent-foreground" : "text-muted hover:text-foreground")}
+            >
+              {value === "month" ? copy[lang].monthly : copy[lang].annual}
+              {value === "year" && <span className="ml-2 text-xs">{copy[lang].save}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
         {PRICING.tiers.map((tier) => {
           const localized = tier.localized[lang];
-          const annualLabel = annual[lang];
+          const annualSaving = (tier.price * 12 - tier.annualPrice).toFixed(2);
+          const annualEffective = (tier.annualPrice / 12).toFixed(2);
+          const displayPrice = tier.price === 0 ? null : interval === "year" ? tier.annualPrice : tier.price;
           return (
-            <div
-              key={tier.id}
-              className={cn(
-                "flex flex-col rounded-2xl border bg-elevated p-5",
-                tier.popular ? "border-accent" : "border-border",
-              )}
-            >
+            <div key={tier.id} className={cn("flex flex-col rounded-2xl border bg-elevated p-5", tier.popular ? "border-accent" : "border-border")}>
               <h2 className="font-medium">{localized.name}</h2>
               <p className="mt-3 font-display text-2xl">
-                {tier.price === 0 ? localized.name : `€${tier.price}${t(lang, "pricing_mo")}`}
+                {tier.price === 0 ? localized.name : <>€{displayPrice}<span className="text-base font-normal"> / {interval === "year" ? copy[lang].year : copy[lang].month}</span></>}
               </p>
-              {tier.price > 0 && (
+              {tier.price > 0 && interval === "year" && (
                 <div className="mt-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2">
-                  <p className="font-medium">€{tier.annualPrice}{annualLabel.label}</p>
-                  <p className="text-sm font-medium">{annualLabel.save}</p>
-                  <p className="text-xs text-muted">€{(tier.price * 12).toFixed(2)} {annualLabel.equivalent}</p>
+                  <p className="font-medium">{copy[lang].save} €{annualSaving}</p>
+                  <p className="text-sm text-muted">€{annualEffective} {copy[lang].effective}</p>
                 </div>
               )}
-              <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
-                {localized.features.map((feature) => (
-                  <li key={feature}>{feature}</li>
-                ))}
-              </ul>
+              {tier.price > 0 && interval === "month" && <p className="mt-2 text-sm text-muted">€{tier.annualPrice} / {copy[lang].year} — {copy[lang].save} 16.7%</p>}
+              <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">{localized.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
               <Button asChild className="mt-6" variant={tier.popular ? "default" : "outline"}>
-                <Link to={tier.id === "free" ? "/converter" : "/login"}>{localized.cta}</Link>
+                <Link to={tier.id === "free" ? "/converter" : "/login"} search={tier.id === "free" ? undefined : { plan: tier.id, interval }}>
+                  {localized.cta}
+                </Link>
               </Button>
             </div>
           );
