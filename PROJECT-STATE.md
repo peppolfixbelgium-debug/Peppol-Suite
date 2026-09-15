@@ -13,12 +13,11 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `9842cd4a8aa1d019ae5bc6df422faccb128245a8`**, parser edge-case regression coverage.
-- Prior converter UX hardening and CI compatibility fixes are on main; current CI #126 is running on the exact checkpoint.
-- CI #125 exposed a formatting-sensitive freemium regression assertion; fixed in `4a078683a0bb78b1172e6dcf56f41f2c3a32d47e` by making the test resilient to source formatting rather than changing product behavior.
-- Parser hardening is on `75a6a37c113f8967d57497c102914a95280a819a`: invoice-number extraction no longer treats bare `Invoice` as the value source, and amount extraction accepts integer EUR values.
-- Regression coverage for these parser cases is on `9842cd4a8aa1d019ae5bc6df422faccb128245a8`.
-- Do not claim full CI/production GREEN until the current run and deployment are independently verified.
+- **Current `main`: `033d485de24bade8cdd5be5aaf498afc54e4d289`**, parser fix preventing a label-only `Purchase order` line from being captured as its own value.
+- CI #135 on `eee31c1152341639c0b430b468cd669b192c3fb4` failed only in `test:regression`; typecheck, lint and build passed. The failure exposed `Purchase` being returned instead of `PO-2026-011` for a split purchase-order label.
+- Fix `033d485de24bade8cdd5be5aaf498afc54e4d289` changes adjacent-label extraction so a line matching the label cannot also supply its own value. CI #136 is queued on this exact SHA; do not claim full GREEN until it completes.
+- Prior converter UX hardening and parser edge-case coverage remain on main: explicit PASS/FAIL/NOT CHECKED, rejection of empty/non-PDF/unreadable/non-invoice-looking uploads, invoice-date-before-number handling and integer amount extraction.
+- Do not claim full CI/production GREEN until current verification and deployment evidence are independently confirmed.
 
 ## Governance / DQM
 - **AMBER:** CEO HQ Delivery & Quality Manager model is active via Issue #28.
@@ -30,9 +29,9 @@ Last updated: 2026-09-15
 - OAuth remains frozen after prior real-browser PASS; no diagnostics should be reintroduced.
 - Converter now explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - PDF extraction limits remain 20 MB / 50 pages; scanned PDFs without extractable text are rejected with an explicit message rather than being treated as empty invoice data.
-- Parser regression coverage now includes invoice-date-before-number and integer amount extraction.
+- Parser regression coverage includes invoice-date-before-number, integer amount extraction and split-label invoice/purchase-order extraction.
 - **P0 evidence gap:** production 3-PDF + bulk-ZIP real-browser E2E pack; success/failure/retry/duplicate/re-download/concurrency quota semantics; anonymous-trial bypass/reset resistance; customer-facing copy/config regression.
-- Issues #34/#36 explicitly document environment limitations: the available connector cannot perform the complete authenticated browser upload flow with the user's local PDF/ZIP and browser session. Do not fabricate PASS from API-only checks.
+- Issues #34/#36 explicitly document environment limitations: the available connector cannot perform the complete authenticated browser upload flow with the user's local PDF/ZIP and authenticated browser cookie. Do not fabricate PASS from API-only checks.
 - No full production READY claim until these are independently evidenced.
 
 ## Production entitlements
@@ -64,6 +63,7 @@ Last updated: 2026-09-15
 - **AMBER / test-mode integrated:** PR #44 merged current-main Stripe Checkout/Portal/webhook test-mode implementation at `5480097f…`.
 - Current implementation includes server-side price mapping, authenticated same-origin Checkout, test-key enforcement, signed webhook verification, live-event rejection, event-id idempotency, and billing persistence.
 - **RED/OFF:** live activation intentionally blocked pending company/legal/tax/accounting/pricing gates and explicit go-live approval.
+- Stale PR #29 was closed without merge on 2026-09-15; it is superseded by the newer current-main Stripe implementation.
 - No live Stripe activation or live payment claim is permitted.
 
 ## Growth / Customer Evidence
@@ -77,7 +77,7 @@ Last updated: 2026-09-15
 - P1 feature implementation remains gated on customer evidence.
 
 ## Highest-value path to first paying customer
-1. Finish CI verification on `9842cd4a8aa1d019ae5bc6df422faccb128245a8` and independently verify its production deployment.
+1. Finish CI verification on `033d485de24bade8cdd5be5aaf498afc54e4d289` and independently verify its production deployment.
 2. Engineering/DQM: close production E2E and remaining quota/anonymous-trial verification using independently available evidence; obtain/execute real-browser sample pack when environment permits.
 3. Legal/DQM: close claims + Terms/Privacy/Security/Cookie audit and professional-review queue.
 4. Pricing/Product: verify production pricing against Founder-approved baseline.
