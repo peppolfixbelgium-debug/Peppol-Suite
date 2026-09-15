@@ -39,7 +39,7 @@ assert.match(entitlementMigration, /monthly_conversion_limit = 1000, monthly_bul
 assert.match(privacySource, /Google or with email and password/, "Privacy page must describe current authentication accurately");
 assert.match(privacySource, /Microsoft and itsme/, "Future sign-in providers must be clearly described as planned");
 assert.match(privacySource, /browser.*PDF|PDF.*browser/i, "Privacy page must describe browser-side PDF processing");
-assert.match(privacySource, /does not store the uploaded PDF or generated XML body/, "Privacy page must describe current storage behavior");
+assert.match(privacySource, /does\s+not\s+store the uploaded PDF or generated XML body/, "Privacy page must describe current storage behavior even when JSX wraps the sentence");
 assert.match(privacySource, /Vercel/, "Privacy page must identify current hosting infrastructure");
 assert.match(privacySource, /Neon PostgreSQL/, "Privacy page must identify current database infrastructure");
 assert.doesNotMatch(privacySource, /Stripe/i, "Privacy page must not imply live Stripe/payment processing exists");
