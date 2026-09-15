@@ -13,10 +13,10 @@ Last updated: 2026-09-15
 - Do not expose credentials or secrets.
 
 ## Current repository checkpoint — 2026-09-15
-- **Current `main`: `9a2365d883ee44d08e14b7dd0d0c36229ee15863`.** This adds a factual Privacy-page correction aligning the notice with the already-implemented authenticated conversion-history CSV export.
-- CI #171 (`34978990682`) completed SUCCESS for the preceding code checkpoint `df71e311...`: migrations 001/002/003, typecheck, lint, build, regression, OAuth/security, auth regression, Vercel adapters, bulk history, freemium product, quota, and Stripe test-mode all passed.
-- The docs checkpoint `b71bf4aa...` was followed by this privacy consistency fix; a fresh CI result for `9a2365d...` is required before treating this latest main commit as fully verified.
-- Signed-in users can export conversion-history metadata as CSV from `src/routes/dashboard.tsx` (`0009daa...`). The Privacy page now states this capability accurately and distinguishes it from account/conversion deletion or full GDPR portability.
+- **Current `main`: `28a37710f6030557e0cc9d868845b9d7836d8c75`.** This adds regression guards ensuring the Privacy page continues to disclose the implemented authenticated conversion-history CSV export and does not imply self-service deletion exists.
+- CI #174 (`34983736292`) completed SUCCESS for the preceding `9a2365d...` privacy consistency fix.
+- CI #175 (`34988250349`) is queued for `28a37710...`; do not claim the latest main commit as fully CI-verified until it completes.
+- Signed-in users can export conversion-history metadata as CSV from `src/routes/dashboard.tsx` (`0009daa...`). The Privacy page accurately states this capability and distinguishes it from account/conversion deletion or full GDPR portability.
 - Parser hardening covers invoice-number/date ordering, integer amounts, split-label invoice/purchase-order extraction, deterministic BPOST Description/Amount-excl-VAT extraction, and line-parser compatibility.
 - Converter UX explicitly reports PASS/FAIL/NOT CHECKED, rejects empty/non-PDF/unreadable/non-invoice-looking uploads, and blocks invalid XML download.
 - Bulk conversion reports explicit PASS/FAIL states and includes blocking validation codes rather than the generic `Has issues` label.
@@ -49,6 +49,7 @@ Last updated: 2026-09-15
 - Privacy page readability was hardened internally; this does not constitute professional legal review.
 - Conversion-history CSV export is available for authenticated users. It is limited to dashboard history metadata; uploaded PDFs and generated XML bodies are not stored in the account database. Deletion, full-account export, retention and rights-request operations remain open and require further product/legal work.
 - The Privacy page was corrected on `9a2365d...` so its deletion/export section no longer falsely says there is no export control.
+- Added a regression guard in `28a37710...` so future changes cannot silently remove the implemented export disclosure or imply self-service deletion is available.
 - Internal fixes must be separated from items requiring Belgian/EU lawyer/accountant confirmation.
 
 ## Company / Ownership
