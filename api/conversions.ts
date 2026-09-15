@@ -3,6 +3,7 @@ import { getDb } from "./_lib/db.js";
 import { getSessionUser, requireSameOrigin, securityEvent } from "./_lib/auth.js";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8" } });
+const ADMIN_TEST_LIMIT = 1000000;
 
 type VercelRequest = {
   method?: string;
@@ -30,13 +31,9 @@ async function handleConversionRequest(request: Request): Promise<Response> {
     const sql = getDb();
     if (request.method === "GET") {
       const rows = await sql<any[]>`SELECT id, invoice_id, supplier, customer, total::text, currency, status, issue_count, created_at FROM conversions WHERE user_id = ${user.id} ORDER BY created_at DESC LIMIT 100`;
-      const [quota] = await sql<any[]>`
-        SELECT q.conversions_used, q.bulk_used, p.monthly_conversion_limit, p.monthly_bulk_limit
-        FROM users u JOIN plans p ON p.id = u.plan_id
-        LEFT JOIN usage_quota q ON q.user_id = u.id AND q.period_start = date_trunc('month', current_date)::date
-        WHERE u.id = ${user.id}
-      `;
-      return json({ conversions: rows, quota: { used: Number(quota?.conversions_used ?? 0), limit: Number(quota?.monthly_conversion_limit ?? 0), bulkUsed: Number(quota?.bulk_used ?? 0), bulkLimit: Number(quota?.monthly_bulk_limit ?? 0) } });
+      const [quota] = await sql<any[]>`SELECT q.conversions_used, q.bulk_used, p.monthly_conversion_limit, p.monthly_bulk_limit FROM users u JOIN plans p ON p.id = u.plan_id LEFT JOIN usage_quota q ON q.user_id = u.id AND q.period_start = date_trunc('month', current_date)::date WHERE u.id = ${user.id}`;
+      const admin = user.role === "admin";
+      return json({ conversions: rows, quota: { used: Number(quota?.conversions_used ?? 0), limit: admin ? ADMIN_TEST_LIMIT : Number(quota?.monthly_conversion_limit ?? 0), bulkUsed: Number(quota?.bulk_used ?? 0), bulkLimit: admin ? ADMIN_TEST_LIMIT : Number(quota?.monthly_bulk_limit ?? 0) }, adminTestMode: admin });
     }
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
     requireSameOrigin(request);
@@ -51,6 +48,12 @@ async function handleConversionRequest(request: Request): Promise<Response> {
     const status = input.status === "ok" || input.status === "issues" ? input.status : "issues";
     const issueCount = Number.isInteger(input.issue_count) ? Number(input.issue_count) : 0;
     if (!invoiceId || !supplier || !customer || !/^\d+(\.\d{1,4})?$/.test(total) || !/^[A-Z]{3}$/.test(currency) || issueCount < 0 || issueCount > 1000) return json({ error: "Invalid conversion record." }, 400);
+
+    if (user.role === "admin") {
+      const [row] = await sql<any[]>`INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count) VALUES (${user.id}, ${invoiceId}, ${supplier}, ${customer}, ${total}, ${currency}, ${status}, ${issueCount}) RETURNING id, invoice_id, supplier, customer, total::text, currency, status, issue_count, created_at`;
+      await securityEvent(request, "conversion_created", user.id, { conversionId: row.id, kind: "conversion", adminTestMode: true });
+      return json({ conversion: row, quota: { used: 0, limit: ADMIN_TEST_LIMIT, kind: "conversion" }, adminTestMode: true }, 201);
+    }
 
     const [plan] = await sql<any[]>`SELECT p.monthly_conversion_limit AS limit FROM users u JOIN plans p ON p.id=u.plan_id WHERE u.id=${user.id}`;
     const limit = Number(plan?.limit ?? 0);
