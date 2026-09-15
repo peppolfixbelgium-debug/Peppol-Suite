@@ -42,6 +42,8 @@ assert.match(privacySource, /browser.*PDF|PDF.*browser/i, "Privacy page must des
 assert.match(privacySource, /does\s+not\s+store the uploaded PDF or generated XML body/, "Privacy page must describe current storage behavior even when JSX wraps the sentence");
 assert.match(privacySource, /Vercel/, "Privacy page must identify current hosting infrastructure");
 assert.match(privacySource, /Neon PostgreSQL/, "Privacy page must identify current database infrastructure");
+assert.match(privacySource, /Signed-in users can currently export the conversion-history metadata/, "Privacy page must accurately disclose the implemented history CSV export");
+assert.match(privacySource, /There is currently no self-service account or conversion-history deletion control/, "Privacy page must not imply self-service deletion is implemented");
 assert.doesNotMatch(privacySource, /Stripe/i, "Privacy page must not imply live Stripe/payment processing exists");
 
 console.log("Freemium/product/privacy regression: PASS");
