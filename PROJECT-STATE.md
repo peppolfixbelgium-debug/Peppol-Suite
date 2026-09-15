@@ -25,9 +25,10 @@
 
 ## Quota semantics checkpoint — 2026-09-15
 - Normal conversions consume `monthly_conversion_limit` document units.
-- Bulk conversions now consume `monthly_bulk_limit` **per successfully saved document**, not per ZIP/job/batch.
+- Bulk conversions consume `monthly_bulk_limit` **per successfully saved document**, not per ZIP/job/batch.
 - Bulk history records use a distinct `kind: bulk` path so bulk document usage does not consume the normal conversion quota.
 - Bulk quota reservation and history insertion are atomic through the same database CTE pattern used for normal conversion quota enforcement.
+- Admin test mode now uses the same usage counters with a 1,000,000-unit test ceiling, so Founder QA usage reflects actual tested documents instead of always reporting zero.
 - Bulk UI displays current bulk document units and stops based on the bulk-document allowance.
 - Regression coverage asserts bulk document quota increments by one per document and blocks at the plan limit.
 
