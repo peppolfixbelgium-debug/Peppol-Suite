@@ -45,7 +45,7 @@ async function handleConversionRequest(request: Request): Promise<Response> {
     requireSameOrigin(request);
     const input = await request.json().catch(() => null) as Record<string, unknown> | null;
     if (!input || typeof input !== "object") return json({ error: "Invalid JSON body." }, 400);
-    if (input.kind !== "conversion") return json({ error: "Invalid conversion kind." }, 400);
+    if (input.kind !== "conversion" && input.kind !== "bulk") return json({ error: "Invalid conversion kind." }, 400);
     const invoiceId = typeof input.invoice_id === "string" ? input.invoice_id.slice(0, 200) : "";
     const supplier = typeof input.supplier === "string" ? input.supplier.slice(0, 300) : "";
     const customer = typeof input.customer === "string" ? input.customer.slice(0, 300) : "";
@@ -55,13 +55,43 @@ async function handleConversionRequest(request: Request): Promise<Response> {
     const issueCount = Number.isInteger(input.issue_count) ? Number(input.issue_count) : 0;
     if (!invoiceId || !supplier || !customer || !/^\d+(\.\d{1,4})?$/.test(total) || !/^[A-Z]{3}$/.test(currency) || issueCount < 0 || issueCount > 1000) return json({ error: "Invalid conversion record." }, 400);
 
+    if (input.kind === "bulk") {
+      if (user.role === "admin") {
+        const [row] = await sql<any[]>`INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count) VALUES (${user.id}, ${invoiceId}, ${supplier}, ${customer}, ${total}, ${currency}, ${status}, ${issueCount}) RETURNING id, invoice_id, supplier, customer, total::text, currency, status, issue_count, created_at`;
+        await securityEvent(request, "conversion_created", user.id, { conversionId: row.id, kind: "bulk", adminTestMode: true });
+        return json({ conversion: row, quota: { used: 0, limit: ADMIN_TEST_LIMIT, kind: "bulk" }, adminTestMode: true }, 201);
+      }
+      const [plan] = await sql<any[]>`SELECT p.monthly_bulk_limit AS limit FROM users u JOIN plans p ON p.id = u.plan_id WHERE u.id = ${user.id}`;
+      const limit = Number(plan?.limit ?? 0);
+      if (limit <= 0) return json({ error: "Bulk conversion is not available on the Free plan." }, 403);
+      const [row] = await sql<any[]>`
+        WITH quota AS (
+          INSERT INTO usage_quota (user_id, period_start, conversions_used, bulk_used)
+          VALUES (${user.id}, date_trunc('month', current_date)::date, 0, 1)
+          ON CONFLICT (user_id, period_start) DO UPDATE
+            SET bulk_used = usage_quota.bulk_used + 1
+            WHERE usage_quota.bulk_used < ${limit}
+          RETURNING bulk_used
+        ), inserted AS (
+          INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count)
+          SELECT ${user.id}, ${invoiceId}, ${supplier}, ${customer}, ${total}, ${currency}, ${status}, ${issueCount}
+          FROM quota
+          RETURNING id, invoice_id, supplier, customer, total::text, currency, status, issue_count, created_at
+        )
+        SELECT inserted.*, quota.bulk_used FROM inserted CROSS JOIN quota
+      `;
+      if (!row) return json({ error: "Monthly bulk document limit reached." }, 429);
+      await securityEvent(request, "conversion_created", user.id, { conversionId: row.id, kind: "bulk" });
+      return json({ conversion: row, quota: { used: Number(row.bulk_used), limit, kind: "bulk" } }, 201);
+    }
+
     if (user.role === "admin") {
       const [row] = await sql<any[]>`INSERT INTO conversions (user_id, invoice_id, supplier, customer, total, currency, status, issue_count) VALUES (${user.id}, ${invoiceId}, ${supplier}, ${customer}, ${total}, ${currency}, ${status}, ${issueCount}) RETURNING id, invoice_id, supplier, customer, total::text, currency, status, issue_count, created_at`;
       await securityEvent(request, "conversion_created", user.id, { conversionId: row.id, kind: "conversion", adminTestMode: true });
       return json({ conversion: row, quota: { used: 0, limit: ADMIN_TEST_LIMIT, kind: "conversion" }, adminTestMode: true }, 201);
     }
 
-    const [plan] = await sql<any[]>`SELECT p.monthly_conversion_limit AS limit FROM users u JOIN plans p ON p.id=u.plan_id WHERE u.id=${user.id}`;
+    const [plan] = await sql<any[]>`SELECT p.monthly_conversion_limit AS limit FROM users u JOIN plans p ON p.id = u.plan_id WHERE u.id = ${user.id}`;
     const limit = Number(plan?.limit ?? 0);
     const [row] = await sql<any[]>`
       WITH quota AS (
