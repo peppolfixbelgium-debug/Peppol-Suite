@@ -7,8 +7,9 @@
 - Bulk quota semantics are document-based: each successfully saved bulk document consumes one `bulk_used` unit; bulk does not consume normal conversion quota.
 - Admin/Founder test mode uses the same usage counters with a 1,000,000-unit test ceiling so QA usage reflects actual tested documents.
 - Account usage UI labels bulk allowance explicitly as **Bulk documents** to match backend semantics.
-- Account 2.0 is now implemented: customer command-center header, first-use onboarding CTA, subscription/entitlement card backed by pricing config, monthly reset indicator, security card, quick actions, and prominent conversion/bulk actions.
-- CI verification is tracked separately from documentation/evidence; the latest Account 2.0 commit has a GitHub CI run in progress and is not yet GREEN.
+- Account 2.0 is implemented: customer command-center header, first-use onboarding CTA, subscription/entitlement card backed by pricing config, monthly reset indicator, security card, quick actions, and prominent conversion/bulk actions.
+- Account 2.0 evidence is recorded in `docs/account-command-center-2026-09-15.md`.
+- CI verification is tracked separately from documentation/evidence; the latest Account 2.0 engineering commit `3b6928f2f3c3ae93b494acd0da8234f3d23d8200` has GitHub CI run #228 observed in progress. No CI GREEN claim is made until completion.
 - Pricing baseline remains unchanged: Pro €14.90/month or €149/year; Business €44.90/month or €449/year; 16.7% annual discount; no live billing activation.
 - Authenticated conversion-history deletion remains implemented with same-origin protection, strict user ownership, audit event emission, confirmation-gated dashboard control, and matching Privacy disclosure.
 - Product/privacy regression coverage protects the implemented CSV history export and deletion behavior.
@@ -20,7 +21,7 @@
 - Company/ownership remains a professional confirmation gate; the working direction must not be treated as incorporated/legal fact.
 - Live Stripe/payment processing remains OFF; checkout code is explicitly test-mode guarded.
 - Growth outbound remains OFF pending Founder approval; no paid prospecting credits are authorized.
-- Production deployment must be independently verified against the latest verified SHA before calling deployment GREEN.
+- Production deployment must be independently verified against the latest main SHA before calling deployment GREEN.
 
 ## Account/profile checkpoint — 2026-09-15
 - Authenticated navigation exposes an Account link to the dashboard/profile surface.
@@ -47,7 +48,7 @@
 
 ## Verification rules
 - CI/deployment status must be independently observed for the exact latest main SHA before being called GREEN/READY.
-- The Account 2.0 push at `3b6928f2f3c3ae93b494acd0da8234f3d23d8200` has GitHub CI run #228 in progress; no GREEN claim is made until it completes.
+- The latest Account 2.0 engineering push has CI run #228 in progress; the subsequent evidence/state commits must not be mistaken for a completed CI result for the latest tree.
 - Founder production browser screenshots are evidence of the tested flows, but do not substitute for independent deployment verification against the latest SHA.
 
 ## Operating rule
