@@ -17,7 +17,7 @@ function Terms() {
         </p>
         <p>
           You remain responsible for the completeness and accuracy of every invoice, for choosing a certified
-          Access Point, and for meeting Belgian and EU invoicing rules (including the 2026 B2B mandate).
+          Access Point, and for meeting the Belgian and EU invoicing rules that apply to your transactions.
         </p>
         <p>
           The anonymous trial currently allows three document units per month in the browser. Signed-in
