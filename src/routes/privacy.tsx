@@ -7,12 +7,12 @@ export const Route = createFileRoute("/privacy")({ component: Privacy });
 function Privacy() {
   const lang = usePrefs((s) => s.lang);
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
+    <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       <h1 className="font-display text-4xl tracking-tight">{t(lang, "privacy_title")}</h1>
 
-      <div className="mt-8 space-y-8 text-sm leading-relaxed text-muted">
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">At a glance</h2>
+      <div className="mt-8 max-w-3xl space-y-10 text-base leading-7 text-muted">
+        <section aria-labelledby="privacy-glance">
+          <h2 id="privacy-glance" className="mb-3 text-lg font-semibold text-foreground">At a glance</h2>
           <p>
             Peppol Suite currently processes PDF documents in the browser for the single-file and bulk conversion
             flows described below. The current implementation does not store uploaded PDFs or generated XML bodies
@@ -21,8 +21,8 @@ function Privacy() {
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">1. Documents and trial usage</h2>
+        <section aria-labelledby="privacy-documents">
+          <h2 id="privacy-documents" className="mb-3 text-lg font-semibold text-foreground">1. Documents and trial usage</h2>
           <p>
             PDF files are processed in your browser with PDF.js. The current single-file and bulk conversion flows
             do not upload the PDF to our servers for parsing. Anonymous trial usage is tracked locally in your
@@ -30,34 +30,35 @@ function Privacy() {
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">2. Signed-in account data</h2>
+        <section aria-labelledby="privacy-account">
+          <h2 id="privacy-account" className="mb-3 text-lg font-semibold text-foreground">2. Signed-in account data</h2>
           <p>
             When you sign in, the service stores account information such as your email, name and authentication
             provider/account identifier, plus hashed session and authentication tokens. Session cookies are
             HttpOnly, SameSite=Lax and Secure in production.
           </p>
-          <p className="mt-3">
+          <p className="mt-4">
             Signed-in conversion history and quota use metadata can include invoice number, supplier and customer
-            names, total, currency, status, issue count and creation time. The current implementation does not store the uploaded PDF or generated XML body in the database.
+            names, total, currency, status, issue count and creation time. The current implementation does not
+            store the uploaded PDF or generated XML body in the database.
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">3. Providers and infrastructure</h2>
+        <section aria-labelledby="privacy-providers">
+          <h2 id="privacy-providers" className="mb-3 text-lg font-semibold text-foreground">3. Providers and infrastructure</h2>
           <p>
             You can currently sign in with Google or with email and password. The production application is hosted
             on Vercel and uses Neon PostgreSQL for signed-in account, quota and conversion-history data. Google is
             a current sign-in provider. Live payment processing is not currently enabled.
           </p>
-          <p className="mt-3">
+          <p className="mt-4">
             Additional sign-in options, including Microsoft and itsme®, are planned as the product evolves and are
             not described as active processing partners by this page.
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">4. Cookies and local browser storage</h2>
+        <section aria-labelledby="privacy-cookies">
+          <h2 id="privacy-cookies" className="mb-3 text-lg font-semibold text-foreground">4. Cookies and local browser storage</h2>
           <p>
             Signed-in sessions use authentication cookies configured as HttpOnly, SameSite=Lax and Secure in
             production. Anonymous trial usage uses localStorage. The exact cookie inventory, consent requirements
@@ -65,8 +66,8 @@ function Privacy() {
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">5. Deletion, export and retention</h2>
+        <section aria-labelledby="privacy-retention">
+          <h2 id="privacy-retention" className="mb-3 text-lg font-semibold text-foreground">5. Deletion, export and retention</h2>
           <p>
             There is currently no self-service account or conversion-history deletion or export control in the
             product. Local anonymous quota can be cleared by clearing site data. Account retention periods,
@@ -75,8 +76,8 @@ function Privacy() {
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-2 text-base font-semibold text-foreground">6. Legal completion required before launch</h2>
+        <section aria-labelledby="privacy-legal">
+          <h2 id="privacy-legal" className="mb-3 text-lg font-semibold text-foreground">6. Legal completion required before launch</h2>
           <p>
             The final privacy notice still requires confirmation of the data controller and contact details,
             purposes and legal bases, applicable retention periods, data-subject rights and request process,
