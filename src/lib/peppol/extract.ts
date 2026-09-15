@@ -151,7 +151,7 @@ function guessCurrency(text: string): InvoiceField {
   return field("EUR", "medium");
 }
 function collectIban(text: string): string {
-  const candidates = text.match(/\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]{2,4}){3,8}\b/gi) ?? [];
+  const candidates = text.match(/\b[A-Z]{2}\d{2}(?:[ \t-]?[A-Z0-9]{2,4}){3,8}\b/gi) ?? [];
   for (const candidate of candidates) {
     const normalized = candidate.replace(/[\s-]/g, "").toUpperCase();
     if (isValidIban(normalized)) return normalized;
