@@ -19,7 +19,8 @@ assert.match(quotaSource, /ANONYMOUS_TRIAL_LIMIT = 3/, "Anonymous trial target m
 assert.match(quotaSource, /localStorage/, "Anonymous quota must remain a soft browser-local mechanism");
 assert.match(converterSource, /consumeAnonymousQuota\(\)/, "Anonymous successful downloads must consume the local trial quota");
 assert.match(converterSource, /saveConversion\([\s\S]*?issue_count:\s*result\.issues\.length/, "Authenticated conversion history must persist the actual validation issue count");
-assert.match(converterSource, /if\s*\(\s*conversionSaved\s*\)/, "Repeated downloads must not create duplicate conversion records");
+assert.match(converterSource, /conversionReady\s*\|\|\s*converting/, "Repeated conversion attempts must be ignored after a conversion is prepared");
+assert.match(converterSource, /if\s*\(!conversionReady\)/, "XML download/copy must be gated until the conversion is prepared");
 assert.match(conversionApi, /WITH quota AS/, "Server conversion quota and history must be committed atomically in one SQL statement");
 assert.match(conversionApi, /input\.kind !== \"conversion\" && input\.kind !== \"bulk\"/, "Conversion API must accept only explicit conversion or bulk record kinds");
 assert.match(conversionApi, /input\.kind === \"bulk\"/, "Bulk history must use the separate bulk entitlement path");
