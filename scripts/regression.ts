@@ -79,8 +79,8 @@ assert.equal(collision.paymentAccount.value, "BE36201000527281");
 assert.notEqual(collision.vatAmount.value, "123456749.00");
 assert.notEqual(collision.paymentAccount.value, "BE0123456749Street");
 assert.equal(validateInvoice(collision).ok, false);
-assert.ok(validateInvoice(collision).issues.some((i) => i.code === "BR-CO-14"));
-assert.ok(validateInvoice(collision).issues.some((i) => i.code === "IBAN-01" ) === false);
+assert.ok(!validateInvoice(collision).issues.some((i) => i.code === "BR-CO-14"));
+assert.ok(!validateInvoice(collision).issues.some((i) => i.code === "IBAN-01"));
 
 const dateBeforeInvoice = extractInvoice(`Invoice date: 15/08/2026\nSupplier BV\nInvoice #REAL-2026-009\nTotal: 121 EUR`);
 assert.equal(dateBeforeInvoice.invoiceNumber.value, "REAL-2026-009");
