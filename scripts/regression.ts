@@ -77,6 +77,7 @@ assert.equal(dateBeforeInvoice.invoiceNumber.value, "REAL-2026-009");
 assert.equal(dateBeforeInvoice.issueDate.value, "2026-08-15");
 
 const splitLabels = extractInvoice(`INVOICE\nINV-2026-011\nInvoice date\n15/09/2026\nSupplier BV\nBuyer SRL\nVAT BE 1234.567.894\nVAT BE 9876.543.265\nTotal due 121 EUR\nPurchase order\nPO-2026-011`);
+console.log("SPLIT LABEL DEBUG", { invoiceNumber: splitLabels.invoiceNumber.value, issueDate: splitLabels.issueDate.value, orderReference: splitLabels.orderReference.value });
 assert.equal(splitLabels.invoiceNumber.value, "INV-2026-011");
 assert.equal(splitLabels.issueDate.value, "2026-09-15");
 assert.equal(splitLabels.orderReference.value, "PO-2026-011");
