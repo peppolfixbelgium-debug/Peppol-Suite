@@ -35,6 +35,12 @@ async function handleConversionRequest(request: Request): Promise<Response> {
       const admin = user.role === "admin";
       return json({ conversions: rows, quota: { used: Number(quota?.conversions_used ?? 0), limit: admin ? ADMIN_TEST_LIMIT : Number(quota?.monthly_conversion_limit ?? 0), bulkUsed: Number(quota?.bulk_used ?? 0), bulkLimit: admin ? ADMIN_TEST_LIMIT : Number(quota?.monthly_bulk_limit ?? 0) }, adminTestMode: admin });
     }
+    if (request.method === "DELETE") {
+      requireSameOrigin(request);
+      const result = await sql<{ id: string }[]>`DELETE FROM conversions WHERE user_id = ${user.id} RETURNING id`;
+      await securityEvent(request, "conversion_history_deleted", user.id, { deletedCount: result.length });
+      return json({ deletedCount: result.length });
+    }
     if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
     requireSameOrigin(request);
     const input = await request.json().catch(() => null) as Record<string, unknown> | null;
