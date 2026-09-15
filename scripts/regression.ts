@@ -73,6 +73,15 @@ assert.equal(validateInvoice(bpost).ok, false);
 assert.ok(validateInvoice(bpost).issues.some((i) => i.code === "PEPPOL-COMMON-R043"));
 assert.ok(validateInvoice(bpost).issues.some((i) => i.code === "IBAN-01"));
 
+const collision = extractInvoice(`INVOICE\nE2E-SUCCESS-COLLISION\nInvoice date: 15/09/2026\nSupplier Demo SRL\nRue Test 10\n2000 Antwerpen\nVAT number: BE0123456749\nCustomer Demo BV\nAvenue Test 20\n2000 Antwerpen\nVAT number: BE0987654394\nIBAN: BE36 2010 0052 7281\nSubtotal excl VAT: 100.00 EUR\nVAT 21%: 21.00 EUR\nTotal due: 121.00 EUR`);
+assert.equal(collision.vatAmount.value, "21.00");
+assert.equal(collision.paymentAccount.value, "BE36201000527281");
+assert.notEqual(collision.vatAmount.value, "123456749.00");
+assert.notEqual(collision.paymentAccount.value, "BE0123456749Street");
+assert.equal(validateInvoice(collision).ok, false);
+assert.ok(validateInvoice(collision).issues.some((i) => i.code === "BR-CO-14"));
+assert.ok(validateInvoice(collision).issues.some((i) => i.code === "IBAN-01" ) === false);
+
 const dateBeforeInvoice = extractInvoice(`Invoice date: 15/08/2026\nSupplier BV\nInvoice #REAL-2026-009\nTotal: 121 EUR`);
 assert.equal(dateBeforeInvoice.invoiceNumber.value, "REAL-2026-009");
 assert.equal(dateBeforeInvoice.issueDate.value, "2026-08-15");
