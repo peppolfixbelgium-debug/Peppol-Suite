@@ -63,6 +63,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: keyof FileRoutesByFullPath
   fileRoutesByTo: FileRoutesByTo
+  to: keyof FileRoutesByTo
   id: keyof FileRoutesById
   fileRoutesById: FileRoutesById
 }
