@@ -7,6 +7,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as BulkRouteImport } from './routes/bulk'
 import { Route as ConverterRouteImport } from './routes/converter'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -19,6 +20,7 @@ const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute:
 const BulkRoute = BulkRouteImport.update({ id: '/bulk', path: '/bulk', getParentRoute: () => rootRouteImport } as any)
 const ConverterRoute = ConverterRouteImport.update({ id: '/converter', path: '/converter', getParentRoute: () => rootRouteImport } as any)
 const DashboardRoute = DashboardRouteImport.update({ id: '/dashboard', path: '/dashboard', getParentRoute: () => rootRouteImport } as any)
+const CommandCenterRoute = CommandCenterRouteImport.update({ id: '/command-center', path: '/command-center', getParentRoute: () => rootRouteImport } as any)
 const LoginRoute = LoginRouteImport.update({ id: '/login', path: '/login', getParentRoute: () => rootRouteImport } as any)
 const PricingRoute = PricingRouteImport.update({ id: '/pricing', path: '/pricing', getParentRoute: () => rootRouteImport } as any)
 const PrivacyRoute = PrivacyRouteImport.update({ id: '/privacy', path: '/privacy', getParentRoute: () => rootRouteImport } as any)
@@ -32,6 +34,7 @@ export interface FileRoutesByFullPath {
   '/bulk': typeof BulkRoute
   '/converter': typeof ConverterRoute
   '/dashboard': typeof DashboardRoute
+  '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -47,6 +50,7 @@ export interface FileRoutesById {
   '/bulk': typeof BulkRoute
   '/converter': typeof ConverterRoute
   '/dashboard': typeof DashboardRoute
+  '/command-center': typeof CommandCenterRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -59,7 +63,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: keyof FileRoutesByFullPath
   fileRoutesByTo: FileRoutesByTo
-  to: keyof FileRoutesByTo
   id: keyof FileRoutesById
   fileRoutesById: FileRoutesById
 }
@@ -68,6 +71,7 @@ declare module '@tanstack/react-router' { interface FileRoutesByPath {
   '/bulk': { id: '/bulk'; path: '/bulk'; fullPath: '/bulk'; preLoaderRoute: typeof BulkRouteImport; parentRoute: typeof rootRouteImport }
   '/converter': { id: '/converter'; path: '/converter'; fullPath: '/converter'; preLoaderRoute: typeof ConverterRouteImport; parentRoute: typeof rootRouteImport }
   '/dashboard': { id: '/dashboard'; path: '/dashboard'; fullPath: '/dashboard'; preLoaderRoute: typeof DashboardRouteImport; parentRoute: typeof rootRouteImport }
+  '/command-center': { id: '/command-center'; path: '/command-center'; fullPath: '/command-center'; preLoaderRoute: typeof CommandCenterRouteImport; parentRoute: typeof rootRouteImport }
   '/login': { id: '/login'; path: '/login'; fullPath: '/login'; preLoaderRoute: typeof LoginRouteImport; parentRoute: typeof rootRouteImport }
   '/pricing': { id: '/pricing'; path: '/pricing'; fullPath: '/pricing'; preLoaderRoute: typeof PricingRouteImport; parentRoute: typeof rootRouteImport }
   '/privacy': { id: '/privacy'; path: '/privacy'; fullPath: '/privacy'; preLoaderRoute: typeof PrivacyRouteImport; parentRoute: typeof rootRouteImport }
@@ -76,5 +80,5 @@ declare module '@tanstack/react-router' { interface FileRoutesByPath {
   '/terms': { id: '/terms'; path: '/terms'; fullPath: '/terms'; preLoaderRoute: typeof TermsRouteImport; parentRoute: typeof rootRouteImport }
   '/validate': { id: '/validate'; path: '/validate'; fullPath: '/validate'; preLoaderRoute: typeof ValidateRouteImport; parentRoute: typeof rootRouteImport }
 }}
-const rootRouteChildren = { IndexRoute, BulkRoute, ConverterRoute, DashboardRoute, LoginRoute, PricingRoute, PrivacyRoute, ResetPasswordRoute, SecurityRoute, TermsRoute, ValidateRoute }
+const rootRouteChildren = { IndexRoute, BulkRoute, ConverterRoute, DashboardRoute, CommandCenterRoute, LoginRoute, PricingRoute, PrivacyRoute, ResetPasswordRoute, SecurityRoute, TermsRoute, ValidateRoute }
 export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)._addFileTypes<FileRouteTypes>()
